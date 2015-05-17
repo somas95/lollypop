@@ -13,7 +13,8 @@
 
 from gi.repository import GObject
 
-from lollypop.define import PlayContext, CurrentTrack, Objects
+from lollypop.define import PlayContext, Objects
+from lollypop.track import Track
 
 
 class BasePlayer(GObject.GObject):
@@ -36,13 +37,15 @@ class BasePlayer(GObject.GObject):
         if not hasattr(self, '_albums'):
             GObject.GObject.__init__(self)    
             self._base_init = True
-            # A user playlist used as current playlist
+            # A user playlist used as.current_track playlist
             self._user_playlist = None
             # Used by shuffle tracks to restore user playlist before shuffle
             self._user_playlist_backup = None
-            self.current = CurrentTrack()
+            self.current_track = Track()
+            self.next_track = Track()
+            self.prev_track = Track()
             self.context = PlayContext()
-            # Albums in current playlist
+            # Albums in.current_track playlist
             self._albums = None
             # Current shuffle mode
             self._shuffle = Objects.settings.get_enum('shuffle')

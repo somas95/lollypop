@@ -33,37 +33,21 @@ class Objects:
     inotify = None
     debug = False
 
-
-# Represent current playing track
-class CurrentTrack:
-    id = None
-    title = ''
-    album_id = None
-    album = ''
-    artist = ''
-    aartist_id = None
-    aartist = ''
-    genre_id = None
-    genre = ''
-    number = 0
-    duration = 0.0
-    path = ''
-
-
 # Represent what to do on next track
 class NextContext:
     NONE = 0             # Continue playback
-    STOP_TRACK = 1       # Stop after current track
-    STOP_ALBUM = 2       # Stop after current album
-    STOP_ARTIST = 3      # Stop after current artist
+    STOP_TRACK = 1       # Stop after.current_track.track track
+    STOP_ALBUM = 2       # Stop after.current_track.track album
+    STOP_ARTIST = 3      # Stop after.current_track.track artist
     START_NEW_ALBUM = 4  # Start a new album
 
 
 # Represent playback context
 class PlayContext:
-    album_id = None
     genre_id = None
-    position = None
+    current_position = None
+    next_position = None
+    prev_position = None
     next = NextContext.NONE
 
 

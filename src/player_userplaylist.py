@@ -15,6 +15,8 @@ import random
 
 from lollypop.define import Shuffle
 from lollypop.player_base import BasePlayer
+from lollypop.track import Track
+
 
 # Manage user playlist
 class UserPlaylistPlayer(BasePlayer):
@@ -58,7 +60,7 @@ class UserPlaylistPlayer(BasePlayer):
             if self.context.position >= len(self._user_playlist):
                 self.context.position = 0
             track_id = self._user_playlist[self.context.position]
-        return track_id
+        return Track(track_id)
 
     """
         Prev track id
@@ -71,7 +73,7 @@ class UserPlaylistPlayer(BasePlayer):
             if self.context.position < 0:
                 self.context.position = len(self._user_playlist) - 1
             track_id = self._user_playlist[self.context.position]
-        return track_id
+        return Track(track_id)
 
 #######################
 # PRIVATE             #

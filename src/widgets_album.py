@@ -36,7 +36,7 @@ class AlbumWidget(Gtk.Bin):
         @param force as bool
     """
     def set_cover(self, force=False):
-        selected = self._album_id==Objects.player.current.album_id
+        selected = self._album_id==Objects.player.current_track.album_id
         if self._cover and (selected != self._selected or force):
             self._selected = selected
             pixbuf = Objects.art.get(self._album_id,
@@ -51,7 +51,8 @@ class AlbumWidget(Gtk.Bin):
     """
     def update_cover(self, album_id):
         if self._cover and self._album_id == album_id:
-            self._selected = self._album_id==Objects.player.current.album_id
+            self._selected = self._album_id==\
+                                        Objects.player.current_track.album_id
             pixbuf = Objects.art.get(self._album_id,
                                      ArtSize.BIG,
                                      self._selected)
@@ -259,8 +260,8 @@ class AlbumDetailedWidget(AlbumWidget):
     """
     def update_playing_indicator(self):
         for disc in self._discs:
-            self._tracks_left[disc].update_playing(Objects.player.current.id)
-            self._tracks_right[disc].update_playing(Objects.player.current.id)
+            self._tracks_left[disc].update_playing(Objects.player.current_track.id)
+            self._tracks_right[disc].update_playing(Objects.player.current_track.id)
 
     """
         Return album id for widget

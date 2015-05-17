@@ -18,6 +18,8 @@ from gettext import gettext as _
 from lollypop.playlists import RadiosManager
 from lollypop.player_base import BasePlayer
 from lollypop.define import Navigation
+from lollypop.track import Track
+
 
 # This class neeed the parent object to be a BinPlayer
 class RadioPlayer(BasePlayer):
@@ -36,7 +38,7 @@ class RadioPlayer(BasePlayer):
         @param uri as string
     """
     def load(self, name, uri):
-        self.current.id = Navigation.RADIOS
+        self.current_track.id = Navigation.RADIOS
         self._radio_name = name
         self._radio_uri = uri
         try:
@@ -55,6 +57,7 @@ class RadioPlayer(BasePlayer):
         @return (name, uri)
     """
     def next(self):
+        return Track()
         radios_manager = RadiosManager()
         radios = radios_manager.get()
         i = 0
@@ -79,6 +82,7 @@ class RadioPlayer(BasePlayer):
         @return (name, uri)
     """
     def prev(self):
+        return Track()
         radios_manager = RadiosManager()
         radios = radios_manager.get()
         i = 0
@@ -107,17 +111,17 @@ class RadioPlayer(BasePlayer):
     def _set_current(self):
         string = _("Radio")
         if self._radio_name is not None:
-            self.current.artist = self._radio_name
+            self.current_track.artist = self._radio_name
         if self._radio_uri is not None:
-            self.current.path = self._radio_uri
-        self.current.title = string
-        self.current.album_id = None
-        self.current.album = string
-        self.current.aartist_id = None
-        self.current.aartist = string
-        self.current.genre = string
-        self.current.duration = 0.0
-        self.current.number = 0
+            self.current_track.path = self._radio_uri
+        self.current_track.title = string
+        self.current_track.album_id = None
+        self.current_track.album = string
+        self.current_track.aartist_id = None
+        self.current_track.aartist = string
+        self.current_track.genre = string
+        self.current_track.duration = 0.0
+        self.current_track.number = 0
 
     """
         Read title from stream
@@ -125,12 +129,12 @@ class RadioPlayer(BasePlayer):
         @param message as Gst.Message
     """
     def _on_bus_message_tag(self, bus, message):
-        if self.current.id != Navigation.RADIOS:
+        if self.current_track.id != Navigation.RADIOS:
             return
         tags = message.parse_tag()
         (exist, title) = tags.get_string_index('title', 0)
-        if exist and title != self.current.title:
-            self.current.title = title
+        if exist and title != self.current_track.title:
+            self.current_track.title = title
             self.emit('current-changed')
 
     """

@@ -11,6 +11,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from lollypop.track import Track
+
 
 # Manage a queue
 class QueuePlayer:
@@ -90,11 +92,11 @@ class QueuePlayer:
 
     """
         Get next track id after removing it from queue
-        @return track id as int or None
+        @return track as Track
     """
     def next(self):
         track_id = None
         if self._queue:
             track_id = self._queue[0]
             self.del_from_queue(track_id)
-        return track_id
+        return Track(track_id)

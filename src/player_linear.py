@@ -13,7 +13,7 @@
 
 from lollypop.define import Objects, NextContext
 from lollypop.player_base import BasePlayer
-
+from lollypop.track import Track
 
 # Manage normal playback
 class LinearPlayer(BasePlayer):
@@ -24,59 +24,55 @@ class LinearPlayer(BasePlayer):
         BasePlayer.__init__(self)
 
     """
-        Next track based on current context
+        Next track based on.current_track context
         @param sql as sqlite cursor
-        @return track id as int or None
+        @return track as Track
     """
     def next(self, sql=None):
         track_id = None
-        if self.context.position is not None and self._albums:
-            tracks = Objects.albums.get_tracks(self.context.album_id,
+        if self.context.current_position is not None and self._albums:
+            tracks = Objects.albums.get_tracks(self.current_track.album_id,
                                                self.context.genre_id,
                                                sql)
-            if self.context.next == NextContext.START_NEW_ALBUM:
+            if self.context.current_position + 1 >= len(tracks) or\
+               self.context.next == NextContext.START_NEW_ALBUM:  # next album
                 self.context.next = NextContext.NONE
-                self.context.position = len(tracks)
-            if self.context.position + 1 >= len(tracks):  # next album
-                pos = self._albums.index(self.context.album_id)
+                pos = self._albums.index(self.current_track.album_id)
                 # we are on last album, go to first
                 if pos + 1 >= len(self._albums):
                     pos = 0
                 else:
                     pos += 1
-                self.context.album_id = self._albums[pos]
-                self.context.position = 0
+                self.context.next_position = 0
                 track_id = Objects.albums.get_tracks(self._albums[pos],
                                                      self.context.genre_id,
                                                      sql)[0]
             else:
-                self.context.position += 1
-                track_id = tracks[self.context.position]
-        return track_id
+                self.context.next_position = self.context.current_position + 1
+                track_id = tracks[self.context.next_position]
+        return Track(track_id)
 
     """
-        Prev track base on current context
+        Prev track base on.current_track context
         @param sql as sqlite cursor
-        @return track id as int or None
+        @return track as Track
     """
     def prev(self, sql=None):
-        track_id = None
-        if track_id is None and self.context.position is not None:
-            tracks = Objects.albums.get_tracks(self.current.album_id,
+        track_id = None            
+        if track_id is None and self.context.current_position is not None:
+            tracks = Objects.albums.get_tracks(self.current_track.album_id,
                                                self.context.genre_id)
-            if self.context.position <= 0:  # Prev album
-                pos = self._albums.index(self.current.album_id)
+            if self.context.current_position <= 0:  # Prev album
+                pos = self._albums.index(self.current_track.album_id)
                 if pos - 1 < 0:  # we are on last album, go to first
                     pos = len(self._albums) - 1
                 else:
                     pos -= 1
-                self.current.album_id = self._albums[pos]
-                tracks = Objects.albums.get_tracks(self.current.album_id,
+                tracks = Objects.albums.get_tracks(self._albums[pos],
                                                    self.context.genre_id)
-                self.context.album_id = self.current.album_id
-                self.context.position = len(tracks) - 1
-                track_id = tracks[self.context.position]
+                self.context.prev_position = len(tracks) - 1
+                track_id = tracks[self.context.prev_position]
             else:
-                self.context.position -= 1
-                track_id = tracks[self.context.position]
-        return track_id
+                self.context.prev_position = self.context.current_position - 1
+                track_id = tracks[self.context.prev_position]
+        return Track(track_id)
