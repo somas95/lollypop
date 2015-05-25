@@ -99,9 +99,9 @@ class ShufflePlayer(BasePlayer):
 
         if party:
             self.context.next = NextContext.NONE
-            self._rgvolume.props.album_mode = 0
+            self.set_rg_mode(0)
         else:
-            self._rgvolume.props.album_mode = 1
+            self.set_rg_mode(1)
 
         self._is_party = party
 
@@ -131,7 +131,6 @@ class ShufflePlayer(BasePlayer):
     """
     def is_party(self):
         return self._is_party
-
 #######################
 # PRIVATE             #
 #######################
@@ -144,9 +143,9 @@ class ShufflePlayer(BasePlayer):
 
         if self._shuffle in [Shuffle.TRACKS, Shuffle.TRACKS_ARTIST] or\
            self._user_playlist:
-            self._rgvolume.props.album_mode = 0
+            self.set_rg_mode(0)
         else:
-            self._rgvolume.props.album_mode = 1
+            self.set_rg_mode(1)
 
         if self._user_playlist:
             self._shuffle_playlist()

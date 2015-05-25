@@ -65,3 +65,10 @@ class ReplayGainPlayer:
                                 self._rg_audioconvert1.get_static_pad("sink")))
 
         playbin.set_property("audio-sink", self._rgfilter)
+
+    """
+        Set replaygain mode
+        @param album mode as int
+    """
+    def set_mode(self, album_mode):
+        self._rgvolume.props.album_mode = album_mode

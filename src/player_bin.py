@@ -25,27 +25,33 @@ from lollypop.utils import debug
 
 
 # Bin player class
-class BinPlayer(ReplayGainPlayer, BasePlayer):
+class BinPlayer(BasePlayer):
     """
         Init playbin
     """
     def __init__(self):
         Gst.init(None)
         BasePlayer.__init__(self)
-        self._playbin = Gst.ElementFactory.make('playbin', 'player')
-        flags = self._playbin.get_property("flags")
+        self._playbin1 = Gst.ElementFactory.make('playbin', 'player')
+        self._playbin2 = Gst.ElementFactory.make('playbin', 'player')
+        flags = self._playbin1.get_property("flags")
         flags &= ~GstPlayFlags.GST_PLAY_FLAG_VIDEO
-        self._playbin.set_property('flags', flags)
-        ReplayGainPlayer.__init__(self, self._playbin)
-        self._playbin.connect('about-to-finish',
+        self._playbin1.set_property('flags', flags)
+        self._playbin2.set_property('flags', flags)
+        self._rg1 = ReplayGainPlayer(self._playbin1)
+        self._rg2 = ReplayGainPlayer(self._playbin2)
+        self._playbin1.connect('about-to-finish',
                               self._on_stream_about_to_finish)
-        bus = self._playbin.get_bus()
-        bus.add_signal_watch()
-        bus.connect('message::error', self._on_bus_error)
-        bus.connect('message::eos', self._on_bus_eos)
-        bus.connect('message::stream-start', self._on_stream_start)
-        bus.connect("message::tag", self._on_bus_message_tag)
+        self._playbin2.connect('about-to-finish',
+                              self._on_stream_about_to_finish)
+        for bus in [self._playbin1.get_bus(), self._playbin2.get_bus()]:
+            bus.add_signal_watch()
+            bus.connect('message::error', self._on_bus_error)
+            bus.connect('message::stream-start', self._on_stream_start)
+            bus.connect("message::tag", self._on_bus_message_tag)
         self._handled_error = None
+        self._playbin = self._playbin1
+        self._nextbin = None
 
     """
         True if player is playing
@@ -77,6 +83,8 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
         @param track as Track
     """
     def load(self, track):
+        if self._nextbin is not None:
+            self._playbin = self._nextbin
         self._stop()
         if self._load_track(track):
             self.play()
@@ -150,6 +158,14 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
     """
     def next(self):
         pass
+
+    """
+        Set replaygain mode
+        @param album mode as int
+    """
+    def set_rg_mode(self, album_mode):
+         self._rg1.set_mode(album_mode)
+         self._rg2.set_mode(album_mode)
 
 #######################
 # PRIVATE             #
@@ -227,9 +243,8 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
         self.current_track.title = reader.get_title(tags,
                                                     self.current_track.uri)
         if self.current_track.id == Type.EXTERNAL:
-            (b, duration) = self._playbin.query_duration(Gst.Format.TIME)
-            if b:
-                self.current_track.duration = duration/1000000000
+            self.current_track.duration =\
+                    self._playbin.query_duration(Gst.Format.TIME)[1]/1000000000
             self.current_track.album = reader.get_album_name(tags)
             self.current_track.artist = reader.get_artists(tags)
             self.current_track.aartist = reader.get_album_artist(tags)
@@ -254,19 +269,6 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
         return False
 
     """
-        On end of stream, stop playing if user ask for
-        Else force playing current track
-    """
-    def _on_bus_eos(self, bus, message):
-        debug("Player::_on_bus_eos(): %s" % self.current_track.uri)
-        if self.context.next != NextContext.NONE:
-            self.context.next = NextContext.NONE
-            self._set_next()
-            self.next()
-        else:
-            self.load(self.current_track)
-
-    """
         When stream is about to finish, switch to next track without gap
         @param playbin as Gst bin
     """
@@ -276,7 +278,13 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
         previous_track_id = self.current_track.id
         # We are in a thread, we need to create a new cursor
         sql = Lp.db.get_cursor()
-        GLib.idle_add(self.next)
+        finished_in = self.current_track.duration -\
+                   self._playbin.query_position(Gst.Format.TIME)[1]/1000000000
+        GLib.timeout_add((finished_in-0.25)*1000, self.next)
+        if playbin == self._playbin1:
+            self._nextbin = self._playbin2
+        else:
+            self._nextbin = self._playbin1
         # Scrobble on lastfm
         if Lp.lastfm is not None:
             if self.current_track.aartist_id == Type.COMPILATIONS:

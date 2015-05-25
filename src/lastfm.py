@@ -91,7 +91,8 @@ class LastFM(LastFMNetwork):
         @param album id as int
     """
     def download_album_img(self, album_id):
-        if Gio.NetworkMonitor.get_default().get_network_available():
+        if Gio.NetworkMonitor.get_default().get_network_available() and\
+           album_id is not None:
             album = Lp.albums.get_name(album_id)
             artist = Lp.albums.get_artist_name(album_id)
             self._albums_queue.append((translate_artist_name(artist), album))
@@ -185,12 +186,10 @@ class LastFM(LastFMNetwork):
                 # Compilation or album without album artist
                 if album_id is None:
                     album_id = Lp.albums.get_compilation_id(album, sql)
-                # Do not write files outside collection
-                if not Lp.albums.is_outside(album_id, sql):
-                    filepath = Lp.art.get_album_art_filepath(album_id, sql)
-                    urllib.request.urlretrieve(url, filepath)
-                    Lp.art.clean_album_cache(album_id, sql)
-                    GLib.idle_add(Lp.art.announce_cover_update, album_id)
+                filepath = Lp.art.get_album_art_filepath(album_id, sql)
+                urllib.request.urlretrieve(url, filepath)
+                Lp.art.clean_album_cache(album_id, sql)
+                GLib.idle_add(Lp.art.announce_cover_update, album_id)
             except Exception as e:
                 print("LastFM::download_album_img: %s" % e)
         self._in_albums_download = False
