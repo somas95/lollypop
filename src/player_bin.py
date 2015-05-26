@@ -283,11 +283,14 @@ class BinPlayer(BasePlayer):
         if Lp.settings.get_value('force-gapless'):
             finished_in = self.current_track.duration -\
                    self._playbin.query_position(Gst.Format.TIME)[1]/1000000000
-            GLib.timeout_add((finished_in-0.25)*1000, self.next)
+            timeout = (finished_in-0.10)*1000
+            if timeout < 0:
+                timeout = 0
             if playbin == self._playbin1:
                 self._nextbin = self._playbin2
             else:
                 self._nextbin = self._playbin1
+            GLib.timeout_add(timeout, self.next)
         else:
             GLib.idle_add(self.next)
 
