@@ -93,6 +93,9 @@ class SettingsDialog:
         switch_genres = builder.get_object('switch_genres')
         switch_genres.set_state(Lp.settings.get_value('show-genres'))
 
+        switch_gapless = builder.get_object('switch_gapless')
+        switch_gapless.set_state(Lp.settings.get_value('force-gapless'))
+
         self._settings_dialog.connect('destroy', self._edit_settings_close)
 
         builder.connect_signals(self)
@@ -237,6 +240,14 @@ class SettingsDialog:
     def _update_genres_setting(self, widget, state):
         Lp.window.show_genres(state)
         Lp.settings.set_value('show-genres',
+                              GLib.Variant('b', state))
+
+    """
+        Update gapless setting
+        @param widget as unused, state as widget state
+    """
+    def _update_gapless_setting(self, widget, state):
+        Lp.settings.set_value('force-gapless',
                               GLib.Variant('b', state))
 
     """

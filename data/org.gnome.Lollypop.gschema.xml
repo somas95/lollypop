@@ -23,6 +23,11 @@
             <summary>Window maximized</summary>
             <description>Window maximized state.</description>
         </key>
+        <key type="b" name="force-gapless">
+            <default>false</default>
+            <summary>Play tracks with no gap</summary>
+            <description>From wikipedia: The popular MP3 format defines no way to record the amount of delay or padding for later removal. Also, the encoder delay may vary from encoder to encoder, making automatic removal difficult. Even if two tracks are decompressed and merged into a single track, a pause will usually remain between them.</description>
+        </key>
   	    <key type="ai" name="party-ids">
             <default>[]</default>
             <summary>Enabled genres in party mode</summary>

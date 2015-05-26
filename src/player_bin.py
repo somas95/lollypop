@@ -278,13 +278,19 @@ class BinPlayer(BasePlayer):
         previous_track_id = self.current_track.id
         # We are in a thread, we need to create a new cursor
         sql = Lp.db.get_cursor()
-        finished_in = self.current_track.duration -\
+
+        # Workaround broken mp3s if asked for
+        if Lp.settings.get_value('force-gapless'):
+            finished_in = self.current_track.duration -\
                    self._playbin.query_position(Gst.Format.TIME)[1]/1000000000
-        GLib.timeout_add((finished_in-0.25)*1000, self.next)
-        if playbin == self._playbin1:
-            self._nextbin = self._playbin2
+            GLib.timeout_add((finished_in-0.25)*1000, self.next)
+            if playbin == self._playbin1:
+                self._nextbin = self._playbin2
+            else:
+                self._nextbin = self._playbin1
         else:
-            self._nextbin = self._playbin1
+            GLib.idle_add(self.next)
+
         # Scrobble on lastfm
         if Lp.lastfm is not None:
             if self.current_track.aartist_id == Type.COMPILATIONS:
