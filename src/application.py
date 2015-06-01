@@ -166,33 +166,49 @@ class Application(Gtk.Application):
         Save window position and view
     """
     def prepare_to_exit(self, action=None, param=None):
+        print('prepare_to_exit', 1)
         if Lp.settings.get_value('save-state'):
+            print('prepare_to_exit', 2)
             Lp.window.save_view_state()
+            print('prepare_to_exit', 3)
             if Lp.player.current_track.id is None:
                 track_id = -1
             else:
                 track_id = Lp.player.current_track.id
+            print('prepare_to_exit', 4)
             Lp.settings.set_value('track-id', GLib.Variant('i',
                                                            track_id))
+        print('prepare_to_exit', 5)
         Lp.player.stop()
+        print('prepare_to_exit', 6)
         if Lp.window:
+            print('prepare_to_exit', 7)
             Lp.window.stop_all()
+        print('prepare_to_exit', 8)
         self.quit()
 
     """
         Quit lollypop
     """
     def quit(self):
+        print('quit', 1)
         if Lp.scanner.is_locked():
+            print('quit', 2)
             Lp.scanner.stop()
+            print('quit', 3)
             GLib.idle_add(self.quit)
+            print('quit', 4)
             return
         try:
+            print('quit', 5)
             Lp.sql.execute("VACUUM")
         except Exception as e:
             print("Application::quit(): ", e)
+        print('quit', 6)
         Lp.sql.close()
+        print('quit', 7)
         Lp.window.destroy()
+        print('quit', 8)
 
     """
         Return True if application is fullscreen
