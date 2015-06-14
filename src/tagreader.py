@@ -72,40 +72,42 @@ class ScannerTagReader(TagReader):
     """
         Return artists for tags
         @param tags as Gst.TagList
-        @return string like "artist1;artist2;..."
+        @return artists as [str]
     """
     def get_artists(self, tags):
         if tags is None:
-            return _("Unknown")
+            return [_("Unknown")]
         else:
-            artists = ""
+            artists = []
 
         size = tags.get_tag_size('artist')
         for i in range(0, size):
             (exist, artist) = tags.get_string_index('artist', i)
-            artists += artist
-            if i < size - 1:
-                artists += ";"
+            if exist:
+                artists.append(artist)
+        if not artists:
+            return [_("Unknown")]
         return artists
 
     """
         Return album artist for tags
         @param tags as Gst.TagList
-        @return album artist as string or None
+        @return album artist as [str]
     """
     def get_album_artist(self, tags):
         if tags is None:
-            return _("Unknown")
+            return [_("Unknown")]
         else:
-            album_artist = ""
+            album_artists = []
 
         size = tags.get_tag_size('album-artist')
         for i in range(0, size):
             (exist, artist) = tags.get_string_index('album-artist', i)
-            album_artist += artist
-            if i < size - 1:
-                album_artist += ", "
-        return album_artist
+            if exist:
+                album_artists.append(artist)
+        if not album_artists:
+            return [_("Unknown")]
+        return album_artists
 
     """
         Return album for tags
@@ -126,22 +128,20 @@ class ScannerTagReader(TagReader):
     """
         Return genres for tags
         @param tags as Gst.TagList
-        @return string like "genre1;genre2;..."
+        @return genres as [str]
     """
     def get_genres(self, tags):
-        genres = ""
         if tags is None:
-            return genres
-
-        size = tags.get_tag_size('genre')
-        if size == 0:
-            genres = _("Unknown")
+            return [_("Unknown")]
         else:
-            for i in range(0, size):
-                (exist, genre) = tags.get_string_index('genre', i)
-                genres += genre
-                if i < size-1:
-                    genres += ";"
+            genres = []
+
+        for i in range(0, size):
+            (exist, genre) = tags.get_string_index('genre', i)
+            if exist:
+                genres.append(genre)
+        if not genres:
+            return [_("Unknown")]
         return genres
 
     """

@@ -219,7 +219,7 @@ class CollectionScanner(GObject.GObject, ScannerTagReader):
 
         title = self.get_title(tags, filepath)
         artists = self.get_artists(tags)
-        album_artist = self.get_album_artist(tags)
+        album_artists = self.get_album_artist(tags)
         album_name = self.get_album_name(tags)
         genres = self.get_genres(tags)
         discnumber = self.get_discnumber(tags)
@@ -231,8 +231,8 @@ class CollectionScanner(GObject.GObject, ScannerTagReader):
                                                         album_artist,
                                                         sql)
 
-        (album_artist_id, new) = self.add_album_artist(album_artist,
-                                                       sql)
+        (album_artist_ids, new) = self.add_album_artists(album_artists,
+                                                         sql)
         if new:
             new_artist_ids.append(album_artist_id)
 
