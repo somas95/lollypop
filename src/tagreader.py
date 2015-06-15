@@ -94,7 +94,7 @@ class ScannerTagReader(TagReader):
         @param tags as Gst.TagList
         @return album artist as [str]
     """
-    def get_album_artist(self, tags):
+    def get_album_artists(self, tags):
         if tags is None:
             return [_("Unknown")]
         else:
@@ -193,41 +193,43 @@ class ScannerTagReader(TagReader):
         @commit needed
         @param return ([artist ids as int], [new artist ids as int])
     """
-    def add_artists(self, artists, album_artist, sql):
+    def add_artists(self, artists, album_artists, sql):
         new_artist_ids = []
         # Get all artist ids
         artist_ids = []
-        for word in artists.split(';'):
-            artist = format_artist_name(word)
+        for artist in artists:
+            artist = format_artist_name(artist)
             # Get artist id, add it if missing
             artist_id = Lp.artists.get_id(artist, sql)
             if artist_id is None:
                 Lp.artists.add(artist, sql)
                 artist_id = Lp.artists.get_id(artist, sql)
-                if artist == album_artist:
+                if artist in album_artists:
                     new_artist_ids.append(artist_id)
             artist_ids.append(artist_id)
         return (artist_ids, new_artist_ids)
 
     """
         Add album artist to db
-        @param album_artist as string
+        @param album_artists as [str]
         @param sql as sqlite cursor
         @param return ([album artist ids as int], [new as bool])
         @commit needed
     """
-    def add_album_artist(self, album_artist, sql):
-        album_artist_id = None
-        new = False
-        if album_artist is not None:
+    def add_album_artist(self, album_artists, sql):
+        new_artist_ids = []
+        # Get all album artist ids
+        artist_ids = []
+        for album_artist in album_artists
             album_artist = format_artist_name(album_artist)
             # Get album artist id, add it if missing
             album_artist_id = Lp.artists.get_id(album_artist, sql)
             if album_artist_id is None:
                 Lp.artists.add(album_artist, sql)
                 album_artist_id = Lp.artists.get_id(album_artist, sql)
-                new = True
-        return (album_artist_id, new)
+                new_artist_ids.append(artist_id)
+            artist_ids.append(album_artist_id)
+        return (artist_ids, new_artist_ids)
 
     """
         Add genres to db
