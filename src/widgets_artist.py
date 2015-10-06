@@ -42,6 +42,10 @@ class ArtistContent(Gtk.Stack):
         self._content = builder.get_object('content')
         self._image = builder.get_object('image')
         self._image_frame = builder.get_object('frame')
+        self._search = Gtk.FlowBox()
+        self._search.set_property('valign', Gtk.Align.START)
+        self._search.show()
+        self.add_named(self._search, 'search')
         self.add_named(builder.get_object('widget'), 'widget')
         self.add_named(builder.get_object('notfound'), 'notfound')
         self.add_named(builder.get_object('spinner'), 'spinner')
@@ -66,7 +70,21 @@ class ArtistContent(Gtk.Stack):
         self._image.clear()
         self.set_visible_child_name('spinner')
 
-    def populate(self, artist, content, image_url, suffix):
+    def populate_search(self, search):
+        """
+            Populate search widget
+            @param search as array of u'str'
+        """
+        for child in self._search.get_children():
+            child.destroy()
+        for item in search:
+            link = Gtk.LinkButton.new_with_label(item, item)
+            link.connect('activate-link', self._on_activate_link, item)
+            link.show()
+            self._search.add(link)
+        self.set_visible_child_name('search')
+
+    def populate_result(self, artist, content, image_url, suffix):
         """
             populate widget with content
             @param artist as string
@@ -121,6 +139,13 @@ class ArtistContent(Gtk.Stack):
 #######################
 # PRIVATE             #
 #######################
+    def _on_activate_link(self, widget):
+        """
+            Do nothing
+            @param widget as Gtk.Widget
+        """
+        pass
+
     def _set_content(self, content, stream):
         """
             Set content
@@ -209,6 +234,7 @@ class WikipediaContent(ArtistContent):
         """
             Init widget
         """
+        self._wikipedia = Wikipedia()
         ArtistContent.__init__(self)
 
     def populate(self, artist):
@@ -217,10 +243,32 @@ class WikipediaContent(ArtistContent):
             @param artist as string
             @thread safe
         """
-        content = None
+        if artist is None:
+            artist = "%s %s" % (Lp.player.get_current_artist(),
+                                Lp.player.current_track.album.name)
+        search = self._wikipedia.search(artist)
+        GLib.idle_add(ArtistContent.populate_search, self, search)
+
+    def uncache(self, artist):
+        """
+            Remove artist from cache
+            @param artist as string
+        """
         if artist is None:
             artist = Lp.player.get_current_artist()
-        self._artist = artist
+        ArtistContent.uncache(self, artist, 'wikipedia')
+
+#######################
+# PRIVATE             #
+#######################
+    def _load_page(self, name):
+        """
+            Load page
+            @param page name as str
+            @thread safe
+        """
+        artist = ''
+        content = None
         (content, data) = self._load_from_cache(artist, 'wikipedia')
         if content:
             stream = None
@@ -232,14 +280,13 @@ class WikipediaContent(ArtistContent):
             ArtistContent.populate(self, artist, content,
                                    image_url, 'wikipedia')
 
-    def uncache(self, artist):
+    def _on_activate_link(self, widget, link):
         """
-            Remove artist from cache
-            @param artist as string
+            Do nothing
+            @param widget as Gtk.Widget
+            @param link as string
         """
-        if artist is None:
-            artist = Lp.player.get_current_artist()
-        ArtistContent.uncache(self, artist, 'wikipedia')
+        pass
 
 
 class LastfmContent(ArtistContent):

@@ -34,17 +34,25 @@ class Wikipedia:
         # Ex: Muse_(band), Peaches(musician)
         self._search_str = _("musician;band")
 
-    def get_artist_infos(self, artist):
+    def search(self, pattern):
         """
-            Get artist infos
-            @param artist as str
+            Search in wikipedia
+            @param pattern as string
+        """
+        search = wikipedia.search(pattern)
+        return search
+
+    def get_page(self, page):
+        """
+            Get wikipedia page
+            @param page as str
             @return (url as str, image url as str, content as str)
         """
         if not Gio.NetworkMonitor.get_default().get_network_available():
             return (None, None, None)
         try:
-            words = artist.split(' ')
-            page = self._search_page(artist)
+            words = page.split(' ')
+            page = wikipedia.page(page)
             if page is None:
                 return (None, None, None)
             content = page.content
@@ -66,24 +74,3 @@ class Wikipedia:
 #######################
 # PRIVATE             #
 #######################
-    def _search_page(self, artist, items=None):
-        """
-            Search music page
-            @param artist as string
-            @return page as WikipediaPage
-        """
-        if items is None:
-            item = None
-            items = self._search_str.split(';')
-        elif items:
-            item = items.pop(0)
-        else:
-            return None
-        try:
-            if item:
-                page = wikipedia.page("%s\_\(%s\)" % (artist, item))
-            else:
-                page = wikipedia.page(artist)
-        except:
-            return self._search_page(artist, items)
-        return page
