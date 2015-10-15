@@ -65,6 +65,13 @@ class MpdHandler(socketserver.BaseRequestHandler):
         except IOError:
             print('fin')
 
+    def _commands(self, args):
+        """
+            Return availables command
+        """
+        return "command: status\ncommand: stats\ncommand: playlistinfo\
+\ncommand: idle\ncommand: currentsong\ncommand: lsinfo\ncommand: list\n"
+
     def _status(self, args):
         """
             Return lollypop status
