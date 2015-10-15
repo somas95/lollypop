@@ -50,6 +50,7 @@ class Playlists(GObject.GObject):
         """
         GObject.GObject.__init__(self)
         self._LOVED = _("Loved tracks")
+        self._MPD = _("External")
         try_import = not os.path.exists(self.DB_PATH)
         self._sql = self.get_cursor()
         # Create db schema
@@ -221,6 +222,8 @@ class Playlists(GObject.GObject):
         """
         if playlist_name == self._LOVED:
             return Type.LOVED
+        elif playlist_name == self._MPD:
+            return Type.MPD
         if not sql:
             sql = self._sql
         result = sql.execute("SELECT rowid\
@@ -239,6 +242,8 @@ class Playlists(GObject.GObject):
         """
         if playlist_id == Type.LOVED:
             return self._LOVED
+        elif playlist_id == Type.MPD:
+            return self._MPD
         if not sql:
             sql = self._sql
         result = sql.execute("SELECT name\

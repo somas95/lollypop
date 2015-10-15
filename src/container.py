@@ -447,6 +447,7 @@ class Container:
             @thread safe
         """
         playlists = [(Type.LOVED, Lp.playlists._LOVED)]
+        playlists.append((Type.MPD, Lp.playlists._MPD))
         playlists.append((Type.POPULARS, _("Popular tracks")))
         playlists.append((Type.RECENTS, _("Recently played")))
         playlists.append((Type.NEVER, _("Never played")))
