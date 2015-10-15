@@ -14,6 +14,8 @@
 import socketserver
 import threading
 
+from lollypop.define import Lp
+
 
 class MpdHandler(socketserver.BaseRequestHandler):
     def handle(self):
@@ -59,7 +61,12 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 break
 
     def _status(self):
-        return "volume: 0 repeat: 0 random: 0 single: 0 consume: 0"
+        return "volume: %s repeat: %s random: %s single: %s consume: %s" % \
+                                (Lp.player.get_volume()*100,
+                                 1,
+                                 Lp.player.is_party(),
+                                 1,
+                                 1)
 
     def _currentsong(self):
         return "playlist: 1 playlistlength: 0 mixrampdb: 0 state: stop"
