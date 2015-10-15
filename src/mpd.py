@@ -48,7 +48,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                     for cmd in cmds:
                         try:
                             call = getattr(self, '_%s' % cmd)
-                            msg += call() + '\n'
+                            msg += call()
                             if list_ok:
                                 msg += "list_OK\n"
                         except:
@@ -61,15 +61,16 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 break
 
     def _status(self):
-        return "volume: %s repeat: %s random: %s single: %s consume: %s" % \
-                                (Lp.player.get_volume()*100,
+        return "volume: %s\nrepeat: %s\nrandom: %s\
+                \nsingle: %s\nconsume: %s\n" % \
+                                (int(Lp.player.get_volume()*100),
                                  1,
                                  Lp.player.is_party(),
                                  1,
                                  1)
 
     def _currentsong(self):
-        return "playlist: 1 playlistlength: 0 mixrampdb: 0 state: stop"
+        return "playlist: 1\nplaylistlength: 0\nmixrampdb: 0\nstate: stop\n"
 
 
 class MpdServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
