@@ -393,6 +393,20 @@ class TracksDatabase:
 
         return True
 
+    def count(self, sql=None):
+        """
+            Count albums
+            @return int
+        """
+        if not sql:
+            sql = Lp.sql
+
+        result = sql.execute("SELECT COUNT(*) from tracks")
+        v = result.fetchone()
+        if v is not None:
+            return v[0]
+        return 0
+
     def get_as_non_album_artist(self, artist_id, sql=None):
         """
             Get tracks for artist_id where artist_id isn't main artist

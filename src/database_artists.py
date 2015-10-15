@@ -146,6 +146,20 @@ class ArtistsDatabase:
                                   COLLATE NOCASE", (genre_id,))
         return [(row[0], translate_artist_name(row[1])) for row in result]
 
+    def count(self, sql=None):
+        """
+            Count artists
+            @return int
+        """
+        if not sql:
+            sql = Lp.sql
+
+        result = sql.execute("SELECT COUNT(*) from artists")
+        v = result.fetchone()
+        if v is not None:
+            return v[0]
+        return 0
+
     def exists(self, artist_id, sql=None):
         """
             Return True if artist exist

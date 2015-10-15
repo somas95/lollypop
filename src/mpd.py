@@ -31,6 +31,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             list_ok = False
             while not data_ok:
                 data = self.request.recv(1024).decode('utf-8')
+                print("data: ", data)
                 if data == '':
                     return
                 commands = data.strip().split('\n')
@@ -72,15 +73,28 @@ class MpdHandler(socketserver.BaseRequestHandler):
         return "volume: %s\nrepeat: %s\nrandom: %s\
 \nsingle: %s\nconsume: %s\n" % (int(Lp.player.get_volume()*100),
                                 1,
-                                Lp.player.is_party(),
+                                int(Lp.player.is_party()),
                                 1,
                                 1)
 
     def _playlistinfo(self, args):
-        return '\n'
+        return ''
+
+    def _idle(self, args):
+        return ''
+
+    def _stats(self, args):
+        sql = Lp.db.get_cursor()
+        artists = Lp.artists.count(sql)
+        albums = Lp.albums.count(sql)
+        tracks = Lp.tracks.count(sql)
+        sql.close()
+        return "artists: %s\nalbums: %s\nsongs: %s\nuptime: 0\
+\nplaytime: 0\ndb_playtime: 0\ndb_update: 0\n" % \
+            (artists, albums, tracks)
 
     def _channels(self, args):
-        return '\n'
+        return ''
 
     def _currentsong(self, args):
         """
