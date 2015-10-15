@@ -50,6 +50,7 @@ from lollypop.playlists import Playlists
 from lollypop.radios import Radios
 from lollypop.collectionscanner import CollectionScanner
 from lollypop.fullscreen import FullScreen
+from lollypop.mpd import MpdServerDaemon
 
 
 class Application(Gtk.Application):
@@ -113,6 +114,8 @@ class Application(Gtk.Application):
             MPRIS(self)
         if not Lp.settings.get_value('disable-notifications'):
             Lp.notify = NotificationManager()
+
+        self._mpd = MpdServerDaemon()
 
         settings = Gtk.Settings.get_default()
         dark = Lp.settings.get_value('dark-ui')
@@ -180,6 +183,7 @@ class Application(Gtk.Application):
         """
             Quit lollypop
         """
+        self._mpd.quit()
         if Lp.scanner.is_locked():
             Lp.scanner.stop()
             GLib.idle_add(self.quit)

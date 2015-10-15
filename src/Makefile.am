@@ -22,6 +22,7 @@ app_PYTHON = \
     inotify.py\
     lastfm.py\
     list.py\
+    mpd.py\
     mpris.py\
     notification.py\
     player_base.py\
@@ -79,4 +80,3 @@ app_PYTHON = \
     widgets_web.py\
     wikipedia.py\
     window.py
-
