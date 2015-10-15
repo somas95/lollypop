@@ -73,6 +73,18 @@ class GenresDatabase:
 
         return _("Unknown")
 
+    def get_names(self, sql=None):
+        """
+            Get genre name for genre id
+            @return genres as [str]
+        """
+        if not sql:
+            sql = Lp.sql
+        result = sql.execute("SELECT name\
+                             FROM genres\
+                             ORDER BY name COLLATE NOCASE")
+        return list(itertools.chain(*result))
+
     def get_albums(self, genre_id, sql=None):
         """
             Get all availables albums  for genres

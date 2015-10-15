@@ -22,55 +22,112 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
             One function to handle them all
         """
-        welcome = "OK MPD 0.20.0\n"
+        welcome = "OK MPD 0.19.0\n"
         self.request.send(welcome.encode('utf-8'))
-        while True:
-            try:
-                msg = ''
-                cmds = []
-                data_ok = False
-                list_ok = False
-                while not data_ok:
-                    data = self.request.recv(1024).decode('utf-8')
-                    if data == '':
-                        break
-                    commands = data.strip().split('\n')
+        try:
+            msg = ''
+            cmds = []
+            data_ok = False
+            list_ok = False
+            while not data_ok:
+                data = self.request.recv(1024).decode('utf-8')
+                if data == '':
+                    return
+                commands = data.strip().split('\n')
 
-                    for cmd in commands:
-                        if cmd == 'command_list_ok_begin':
-                            list_ok = True
-                        elif cmd not in ['command_list_begin',
-                                         'command_list_end']:
-                            cmds.append(cmd)
-                    if len(data) < 1024:
-                        data_ok = True
-                if cmds:
-                    for cmd in cmds:
-                        try:
-                            call = getattr(self, '_%s' % cmd)
-                            msg += call()
-                            if list_ok:
-                                msg += "list_OK\n"
-                        except:
-                            pass
-                    msg += "OK\n"
-                    print(msg.encode("utf-8"))
-                    self.request.send(msg.encode("utf-8"))
-            except IOError:
-                print('fin')
-                break
+                for cmd in commands:
+                    if cmd == 'command_list_ok_begin':
+                        list_ok = True
+                    elif cmd not in ['command_list_begin',
+                                     'command_list_end']:
+                        cmds.append(cmd)
+                if len(data) < 1024:
+                    data_ok = True
+            if cmds:
+                for cmd in cmds:
+                    try:
+                        command = cmd.split(' ')
+                        print(command)
+                        call = getattr(self, '_%s' % command[0])
+                        if len(command) > 1:
+                            args = command[1:]
+                        else:
+                            args = None
+                        msg += call(args)
+                        if list_ok:
+                            msg += "list_OK\n"
+                    except Exception as e:
+                        print("Unknown: ", cmd, e)
+                msg += "OK\n"
+                print(msg.encode("utf-8"))
+                self.request.send(msg.encode("utf-8"))
+        except IOError:
+            print('fin')
 
-    def _status(self):
+    def _status(self, args):
+        """
+            Return lollypop status
+            @param args as [str]
+        """
         return "volume: %s\nrepeat: %s\nrandom: %s\
-                \nsingle: %s\nconsume: %s\n" % \
-                                (int(Lp.player.get_volume()*100),
-                                 1,
-                                 Lp.player.is_party(),
-                                 1,
-                                 1)
+\nsingle: %s\nconsume: %s\n" % (int(Lp.player.get_volume()*100),
+                                1,
+                                Lp.player.is_party(),
+                                1,
+                                1)
 
-    def _currentsong(self):
+    def _playlistinfo(self, args):
+        return '\n'
+
+    def _channels(self, args):
+        return '\n'
+
+    def _currentsong(self, args):
+        """
+            Return lollypop current song
+            @param args as [str]
+        """
         return "playlist: 1\nplaylistlength: 0\nmixrampdb: 0\nstate: stop\n"
+
+    def _lsinfo(self, args):
+        """
+            List directories and files
+            @param args as [str]
+        """
+        entries = ''
+        if args[0] == '""':
+            sql = Lp.db.get_cursor()
+            results = Lp.genres.get(sql)
+            for (rowid, genre) in results:
+                entries += 'directory: '+genre+'\n'
+            sql.close()
+        return entries
+
+    def _list(self, args):
+        """
+            List objects
+            @param args as [str]
+        """
+        entries = ''
+        if args[0] == 'Album':
+            sql = Lp.db.get_cursor()
+            results = Lp.albums.get_names(sql)
+            sql.close()
+            for name in results:
+                entries += 'Album: '+name+'\n'
+        elif args[0] == 'Artist':
+            sql = Lp.db.get_cursor()
+            results = Lp.artists.get_names(sql)
+            sql.close()
+            for name in results:
+                entries += 'Artist: '+name+'\n'
+        elif args[0] == 'Genre':
+            sql = Lp.db.get_cursor()
+            results = Lp.genres.get_names(sql)
+            sql.close()
+            for name in results:
+                entries += 'Genre: '+name+'\n'
+        return entries
 
 
 class MpdServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

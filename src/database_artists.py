@@ -78,6 +78,18 @@ class ArtistsDatabase:
 
         return _("Unknown")
 
+    def get_names(self, sql=None):
+        """
+            Get artist names
+            @return Artists as [str]
+        """
+        if not sql:
+            sql = Lp.sql
+        result = sql.execute("SELECT name\
+                             FROM artists\
+                             ORDER BY name COLLATE NOCASE")
+        return list(itertools.chain(*result))
+
     def get_albums(self, artist_id, sql=None):
         """
             Get all availables albums for artist
