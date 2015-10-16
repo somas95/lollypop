@@ -67,7 +67,10 @@ class Base:
             avg_popularity = radios.get_avg_popularity()
             if avg_popularity > 0:
                 popularity = radios.get_popularity(self._album_artist)
-        return popularity * 5 / avg_popularity + 0.5
+        calc = popularity * 5 / avg_popularity + 0.5
+        if calc > 5:
+            calc = 5
+        return calc
 
     def set_popularity(self, popularity):
         """

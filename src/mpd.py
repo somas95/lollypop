@@ -285,11 +285,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
         args_array = args.split('"')
         msg = ""
         if args_array[0] == "get song " and args_array[2] == " rating":
-            print('plop')
             track_id = Lp.tracks.get_id_by_path(args_array[1])
             track = Track(track_id)
-            msg = "sticker: rating=%s\n" % int(track.get_popularity() * 2)
-            print(msg)
+            msg = "sticker: rating=%s\n" % int(track.get_popularity()*2)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
