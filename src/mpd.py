@@ -284,10 +284,18 @@ class MpdHandler(socketserver.BaseRequestHandler):
     def _sticker(self, args, list_ok):
         args_array = args.split('"')
         msg = ""
-        if args_array[0] == "get song " and args_array[2] == " rating":
+        print(args_array)
+        if args_array[0].find("get song ") != -1 and\
+                args_array[2].find("rating") != -1:
             track_id = Lp.tracks.get_id_by_path(args_array[1])
             track = Track(track_id)
             msg = "sticker: rating=%s\n" % int(track.get_popularity()*2)
+        elif args_array[0].find("set song") != -1 and\
+                args_array[2].find("rating") != -1:
+            track_id = Lp.tracks.get_id_by_path(args_array[1])
+            track = Track(track_id)
+            print(int(args_array[3]))
+            track.set_popularity(int(args_array[3])/2)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
