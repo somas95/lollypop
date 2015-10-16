@@ -15,6 +15,7 @@ import socketserver
 import threading
 
 from lollypop.define import Lp
+from time import sleep
 
 
 class MpdHandler(socketserver.BaseRequestHandler):
@@ -25,11 +26,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
         welcome = "OK MPD 0.19.0\n"
         self.request.send(welcome.encode('utf-8'))
         try:
-            msg = ''
-            cmds = []
-            data_ok = False
-            list_ok = False
-            while not data_ok:
+            while True:
+                msg = ''
+                cmds = []
+                list_ok = False
+                sleep(1)
                 data = self.request.recv(1024).decode('utf-8')
                 print("data: ", data)
                 if data == '':
@@ -42,32 +43,31 @@ class MpdHandler(socketserver.BaseRequestHandler):
                     elif cmd not in ['command_list_begin',
                                      'command_list_end']:
                         cmds.append(cmd)
-                if len(data) < 1024:
-                    data_ok = True
-            if cmds:
-                for cmd in cmds:
-                    try:
-                        command = cmd.split(' ')
-                        print(command)
-                        call = getattr(self, '_%s' % command[0])
-                        if len(command) > 1:
-                            args = command[1:]
-                        else:
-                            args = None
-                        msg += call(args)
-                        if list_ok:
-                            msg += "list_OK\n"
-                    except Exception as e:
-                        print("Unknown: ", cmd, e)
-                msg += "OK\n"
-                print(msg.encode("utf-8"))
-                self.request.send(msg.encode("utf-8"))
+                if cmds:
+                    for cmd in cmds:
+                        try:
+                            command = cmd.split(' ')
+                            call = getattr(self, '_%s' % command[0])
+                            if len(command) > 1:
+                                args = command[1:]
+                            else:
+                                args = None
+                            msg += call(args)
+                            if list_ok:
+                                msg += "list_OK\n"
+                        except Exception as e:
+                            print("Unknown: ", cmd, e)
+                    msg += "OK\n"
+                    print(msg.encode("utf-8"))
+                    self.request.send(msg.encode("utf-8"))
         except IOError:
             print('fin')
 
     def _commands(self, args):
         """
             Return availables command
+            @param args as [str]
+            @return str
         """
         return "command: status\ncommand: stats\ncommand: playlistinfo\
 \ncommand: idle\ncommand: currentsong\ncommand: lsinfo\ncommand: list\n"
@@ -76,6 +76,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
             Return lollypop status
             @param args as [str]
+            @return str
         """
         return "volume: %s\nrepeat: %s\nrandom: %s\
 \nsingle: %s\nconsume: %s\n" % (int(Lp.player.get_volume()*100),
@@ -85,12 +86,41 @@ class MpdHandler(socketserver.BaseRequestHandler):
                                 1)
 
     def _playlistinfo(self, args):
+        """
+            Return informations about playlists
+            @param args as [str]
+            @return str
+        """
         return ''
 
+    def _urlhandlers(self, args):
+        """
+            Return url handlers
+            @param args as [str]
+            @return str
+        """
+        return "handler: http\n"
+
+    def _tagtypes(self, args):
+        """
+            Return available tags
+            @param args as [str]
+            @return str
+        """
+        return "tagtype: Artist\ntagtype: Album\ntagtype: Title\
+\ntagype: Track\ntagtype: Name\ntagype: Genre\ntagtype: Data\
+\ntagype: Performer\n"
+
     def _idle(self, args):
+        print(args)
         return ''
 
     def _stats(self, args):
+        """
+            Return stats about db
+            @param args as [str]
+            @return str
+        """
         sql = Lp.db.get_cursor()
         artists = Lp.artists.count(sql)
         albums = Lp.albums.count(sql)
@@ -107,6 +137,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
             Return lollypop current song
             @param args as [str]
+            @return str
         """
         return "playlist: 1\nplaylistlength: 0\nmixrampdb: 0\nstate: stop\n"
 
@@ -114,6 +145,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
             List directories and files
             @param args as [str]
+            @return str
         """
         entries = ''
         if args[0] == '""':
@@ -124,10 +156,27 @@ class MpdHandler(socketserver.BaseRequestHandler):
             sql.close()
         return entries
 
+    def _listplaylists(self, args):
+        """
+            Return available playlists
+            @param args as [str]
+            @return str
+        """
+        return "Main\n"
+
+    def _outputs(self, args):
+        """
+            Return output
+            @param args as [str]
+            @return str
+        """
+        return "outputid: 0\noutputname: null\noutputenabled: 1\n"
+
     def _list(self, args):
         """
             List objects
             @param args as [str]
+            @return str
         """
         entries = ''
         if args[0] == 'Album':
