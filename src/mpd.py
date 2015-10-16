@@ -118,7 +118,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = "playlist: 1\nplaylistlength: 0\nmixrampdb: 0\nstate: stop\n"
+        lenght = len(Lp.playlists.get_tracks(Type.MPD))
+        msg = "playlist: 1\nplaylistlength: %s\
+\nmixrampdb: 0\nstate: stop\n" % lenght
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
@@ -239,7 +241,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param add list_OK as bool
         """
         msg = ""
-        print(args)
         for track_id in Lp.playlists.get_tracks_ids(Type.MPD):
             msg += self._string_for_track_id(track_id)
         if list_ok:
@@ -268,15 +269,22 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
+        if Lp.player.is_playing():
+            songid = Lp.playlists.get_position(Type.MPD,
+                                               Lp.player.current_track.id)
+        else:
+            songid = -1
         msg = "volume: %s\nrepeat: %s\nrandom: %s\
 \nsingle: %s\nconsume: %s\nplaylist: %s\
-\n" % (
+\nplaylistlenght: %s\nsongid: %s\n" % (
            int(Lp.player.get_volume()*100),
            1,
            int(Lp.player.is_party()),
            1,
            1,
-           self._playlist_version)
+           self._playlist_version,
+           len(Lp.playlists.get_tracks(Type.MPD)),
+           songid)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))

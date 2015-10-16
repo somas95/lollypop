@@ -284,6 +284,20 @@ class Playlists(GObject.GObject):
             sql.commit()
             GLib.idle_add(self.emit, "playlist-changed", playlist_id)
 
+    def get_position(self, playlist_id, track_id):
+        """
+            Get track position in playlist
+            @param playlist id as int
+            @param track id as int
+            @return position as int
+        """
+        i = 1
+        for tid in self.get_tracks_ids(playlist_id):
+            if track_id == tid:
+                break
+            i += 1
+        return i
+
     def exists_track(self, playlist_id, track_id):
         """
             Check if track id exist in playlist
