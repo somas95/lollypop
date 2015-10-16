@@ -41,7 +41,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 msg = ''
                 cmds = []
                 list_ok = False
-                sleep(1)
+                # sleep(1)
                 data = ''
                 lenght = 1024
                 while lenght == 1024:
@@ -132,6 +132,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         print(msg)
         self._idles = []
         self.request.send(msg.encode("utf-8"))
+        sleep(1)
 
     def _list(self, args, list_ok):
         """
@@ -281,7 +282,17 @@ class MpdHandler(socketserver.BaseRequestHandler):
         self.request.send(msg.encode("utf-8"))
 
     def _sticker(self, args, list_ok):
-        print("STICKER: ", args)
+        args_array = args.split('"')
+        msg = ""
+        if args_array[0] == "get song " and args_array[2] == " rating":
+            print('plop')
+            track_id = Lp.tracks.get_id_by_path(args_array[1])
+            track = Track(track_id)
+            msg = "sticker: rating=%s\n" % int(track.get_popularity() * 2)
+            print(msg)
+        if list_ok:
+            msg += "list_OK\n"
+        self.request.send(msg.encode("utf-8"))
 
     def _tagtypes(self, args, list_ok):
         """
