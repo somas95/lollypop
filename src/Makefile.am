@@ -49,6 +49,7 @@ app_PYTHON = \
     radios.py\
     selectionlist.py\
     settings.py\
+    sqlcursor.py\
     sync_mtp.py\
     tagreader.py\
     toolbar_end.py\
