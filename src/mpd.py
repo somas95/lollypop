@@ -77,13 +77,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        sql = Lp.db.get_cursor()
-        track_id = Lp.tracks.get_id_by_path(args[1:-1], sql)
-        sql.close()
+        track_id = Lp.tracks.get_id_by_path(args[1:-1])
         track = Track(track_id)
-        sql = Lp.playlists.get_cursor()
-        Lp.playlists.add_tracks(Type.MPD, [track], sql)
-        sql.close()
+        Lp.playlists.add_tracks(Type.MPD, [track])
 
     def _clear(self, args, list_ok):
         """
@@ -91,9 +87,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        sql = Lp.playlists.get_cursor()
-        Lp.playlists.clear(Type.MPD, sql)
-        sql.close()
+        Lp.playlists.clear(Type.MPD)
 
     def _channels(self, args, list_ok):
         msg = ""
@@ -142,21 +136,15 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         msg = ""
         if args == 'Album':
-            sql = Lp.db.get_cursor()
-            results = Lp.albums.get_names(sql)
-            sql.close()
+            results = Lp.albums.get_names()
             for name in results:
                 msg += 'Album: '+name+'\n'
         elif args == 'Artist':
-            sql = Lp.db.get_cursor()
-            results = Lp.artists.get_names(sql)
-            sql.close()
+            results = Lp.artists.get_names()
             for name in results:
                 msg += 'Artist: '+name+'\n'
         elif args == 'Genre':
-            sql = Lp.db.get_cursor()
-            results = Lp.genres.get_names(sql)
-            sql.close()
+            results = Lp.genres.get_names()
             for name in results:
                 msg += 'Genre: '+name+'\n'
         if list_ok:
@@ -169,10 +157,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        sql = Lp.db.get_cursor()
         msg = ""
         i = 0
-        for track_id in Lp.tracks.get_ids(sql):
+        for track_id in Lp.tracks.get_ids():
             msg += self._string_for_track_id(track_id)
             if i > 100:
                 self.request.send(msg.encode("utf-8"))
@@ -182,7 +169,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
-        sql.close()
 
     def _listplaylists(self, args, list_ok):
         """
@@ -203,8 +189,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         msg = ""
         if args == '""':
-            sql = Lp.db.get_cursor()
-            results = Lp.genres.get(sql)
+            results = Lp.genres.get()
             i = 0
             for (rowid, genre) in results:
                 msg += 'directory: '+genre+'\n'
@@ -213,7 +198,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
                     msg = ""
                     i = 0
                 i += 1
-            sql.close()
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
@@ -235,11 +219,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        sql_l = Lp.playlists.get_cursor()
-        sql_p = Lp.playlists.get_cursor()
-        tracks_ids = Lp.playlists.get_tracks_ids(Type.MPD, sql_l, sql_p)
-        sql_l.close()
-        sql_p.close()
+        tracks_ids = Lp.playlists.get_tracks_ids(Type.MPD)
         try:
             track = Track(tracks_ids[int(args)])
             GLib.idle_add(Lp.player.load, track)
@@ -254,15 +234,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         msg = ""
         print(args)
-        sql_l = Lp.playlists.get_cursor()
-        sql_p = Lp.playlists.get_cursor()
-        for track_id in Lp.playlists.get_tracks_ids(Type.MPD, sql_l, sql_p):
+        for track_id in Lp.playlists.get_tracks_ids(Type.MPD):
             msg += self._string_for_track_id(track_id)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
-        sql_l.close()
-        sql_p.close()
 
     def _stats(self, args, list_ok):
         """
@@ -270,11 +246,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        sql = Lp.db.get_cursor()
-        artists = Lp.artists.count(sql)
-        albums = Lp.albums.count(sql)
-        tracks = Lp.tracks.count(sql)
-        sql.close()
+        artists = Lp.artists.count()
+        albums = Lp.albums.count()
+        tracks = Lp.tracks.count()
         msg = "artists: %s\nalbums: %s\nsongs: %s\nuptime: 0\
 \nplaytime: 0\ndb_playtime: 0\ndb_update: 0\n" % \
             (artists, albums, tracks)
