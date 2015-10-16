@@ -42,8 +42,13 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 cmds = []
                 list_ok = False
                 sleep(1)
-                data = self.request.recv(1024).decode('utf-8')
-                print(data)
+                data = ''
+                lenght = 1024
+                while lenght == 1024:
+                    new_data = self.request.recv(1024).decode('utf-8')
+                    data += new_data
+                    lenght = len(new_data)
+                print('data: ', data)
                 if data == '':
                     return
                 commands = data.split('\n')
