@@ -122,7 +122,7 @@ class Playlists(GObject.GObject):
             @param old playlist name as str
         """
         with SqlCursor(self) as sql:
-            playlist_id = self.get_id(old_name, sql)
+            playlist_id = self.get_id(old_name)
             sql.execute("UPDATE playlists\
                         SET name=?\
                         WHERE name=?",
@@ -136,7 +136,7 @@ class Playlists(GObject.GObject):
             @param playlist name as str
         """
         with SqlCursor(self) as sql:
-            playlist_id = self.get_id(name, sql)
+            playlist_id = self.get_id(name)
             sql.execute("DELETE FROM playlists\
                         WHERE name=?",
                         (name,))
@@ -260,7 +260,7 @@ class Playlists(GObject.GObject):
         """
         with SqlCursor(self) as sql:
             for track in tracks:
-                if not self.exists_track(playlist_id, track.id, sql):
+                if not self.exists_track(playlist_id, track.id):
                     sql.execute("INSERT INTO tracks"
                                 " VALUES (?, ?)",
                                 (playlist_id, track.path))
@@ -304,8 +304,7 @@ class Playlists(GObject.GObject):
                 return True
             return False
 
-    def exists_album(self, playlist_id, album_id,
-                     genre_id, sql_l=None, sql_p=None):
+    def exists_album(self, playlist_id, album_id, genre_id):
         """
             Return True if object_id is already present in playlist
             @param playlist id as int
