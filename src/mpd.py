@@ -15,6 +15,8 @@ import socketserver
 import threading
 
 from lollypop.define import Lp
+from lollypop.objects import Track
+
 from time import sleep
 
 
@@ -171,6 +173,25 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @return str
         """
         return "outputid: 0\noutputname: null\noutputenabled: 1\n"
+
+    def _listallinfo(self, args):
+        """
+            List all tracks
+            @param args as [str]
+            @return str
+        """
+        sql = Lp.db.get_cursor()
+        entries = ''
+        for track_id in Lp.tracks.get_ids(sql):
+            track = Track(track_id)
+            entries += "file: %s\nArtist: %s\nAlbumArtist: %s\
+\nTitle= %s\nDate: %s\nGenre: %s\n" %\
+                (track.path,
+                 track.artist,
+                 track.album_artist,
+                 track.title,
+                 track.year,
+                 track.genre)
 
     def _list(self, args):
         """
