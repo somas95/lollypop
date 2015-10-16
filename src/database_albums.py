@@ -676,14 +676,12 @@ class AlbumsDatabase:
             Count albums
             @return int
         """
-        if not sql:
-            sql = Lp.sql
-
-        result = sql.execute("SELECT COUNT(*) from albums")
-        v = result.fetchone()
-        if v is not None:
-            return v[0]
-        return 0
+        with SqlCursor(Lp.db) as sql:
+            result = sql.execute("SELECT COUNT(*) from albums")
+            v = result.fetchone()
+            if v is not None:
+                return v[0]
+            return 0
 
     def get_stats(self, duration, count):
         """
