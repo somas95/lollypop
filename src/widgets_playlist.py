@@ -35,8 +35,6 @@ class PlaylistWidget(Gtk.Bin):
         """
         Gtk.Bin.__init__(self)
         self._playlist_id = playlist_id
-        self._tracks1 = []
-        self._tracks2 = []
         self._stop = False
 
         main_widget = Gtk.Grid()
@@ -140,11 +138,6 @@ class PlaylistWidget(Gtk.Bin):
                 album.artist_id not in track.artist_ids):
             name = "<b>%s</b>\n%s" % (escape(track.artist_names), name)
 
-        if widget == self._tracks_widget1:
-            self._tracks1.append(track)
-        else:
-            self._tracks2.append(track)
-
         if album.id != previous_album_id:
             widget.add_album(track.id, album, pos,
                              name, track.duration, None)
@@ -161,11 +154,8 @@ class PlaylistWidget(Gtk.Bin):
         if Lp.player.is_party():
             Lp.player.load(Track(track_id))
         else:
-            track = Lp.player.set_user_playlist(self._tracks1 + self._tracks2,
-                                                track_id)
-            Lp.player.set_user_playlist_id(self._playlist_id)
-            if track is not None:
-                Lp.player.load(track)
+            Lp.player.set_user_playlist(self._playlist_id)
+            Lp.player.load_in_playlist(track_id)
 
 
 class PlaylistsManagerWidget(Gtk.Bin):
