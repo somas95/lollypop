@@ -242,7 +242,7 @@ class Playlists(GObject.GObject):
                 return v[0]
             return ''
 
-    def clear(self, playlist_id):
+    def clear(self, playlist_id, notify=False):
         """
             Clear playlsit
             @param playlist id as int
@@ -251,6 +251,8 @@ class Playlists(GObject.GObject):
             sql.execute("DELETE FROM tracks\
                          WHERE playlist_id=?", (playlist_id,))
             sql.commit()
+            if notify:
+                GLib.idle_add(self.emit, "playlist-changed", playlist_id)
 
     def add_tracks(self, playlist_id, tracks):
         """
@@ -291,7 +293,7 @@ class Playlists(GObject.GObject):
             @param track id as int
             @return position as int
         """
-        i = 1
+        i = 0
         for tid in self.get_tracks_ids(playlist_id):
             if track_id == tid:
                 break

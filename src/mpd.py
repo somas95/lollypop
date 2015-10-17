@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import GLib
+from gi.repository import GLib, Gst
 
 import socketserver
 import threading
@@ -118,12 +118,23 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        lenght = len(Lp.playlists.get_tracks(Type.MPD))
-        msg = "playlist: 1\nplaylistlength: %s\
-\nmixrampdb: 0\nstate: stop\n" % lenght
+        msg = self._string_for_track_id(Lp.player.current_track.id)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
+
+    def _delete(self, args, list_ok):
+        """
+            Delete track from playlist
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        tracks = []
+        for track_id in Lp.playlists.get_tracks_ids(Type.MPD):
+            tracks.append(Track(track_id))
+        del tracks[int(args[1:-1])]
+        Lp.playlists.clear(Type.MPD)
+        Lp.playlists.add_tracks(Type.MPD, tracks)
 
     def _idle(self, args, list_ok):
         msg = ""
@@ -234,6 +245,18 @@ class MpdHandler(socketserver.BaseRequestHandler):
         except Exception as e:
             print("MpdHandler::_play(): %s" % e)
 
+    def _playid(self, args, list_ok):
+        """
+            Play track
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        try:
+            track = Track(int(args[1:-1]))
+            GLib.idle_add(Lp.player.load, track)
+        except Exception as e:
+            print("MpdHandler::_play(): %s" % e)
+
     def _playlistinfo(self, args, list_ok):
         """
             Send informations about playlists
@@ -270,13 +293,19 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param add list_OK as bool
         """
         if Lp.player.is_playing():
-            songid = Lp.playlists.get_position(Type.MPD,
-                                               Lp.player.current_track.id)
+            elapsed = Lp.player.get_position_in_track() / 1000000 / 60
+            msg = "time: %s:%s\nelapsed: %s\n" % (
+                elapsed,
+                Lp.player.current_track.duration,
+                elapsed)
+            songid = Lp.player.current_track.id
         else:
+            msg = ""
             songid = -1
-        msg = "volume: %s\nrepeat: %s\nrandom: %s\
+        msg += "volume: %s\nrepeat: %s\nrandom: %s\
 \nsingle: %s\nconsume: %s\nplaylist: %s\
-\nplaylistlenght: %s\nsongid: %s\n" % (
+\nplaylistlength: %s\nstate: %s\nsong: %s\
+\nsongid: %s\n" % (
            int(Lp.player.get_volume()*100),
            1,
            int(Lp.player.is_party()),
@@ -284,7 +313,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
            1,
            self._playlist_version,
            len(Lp.playlists.get_tracks(Type.MPD)),
+           self._get_status(),
+           Lp.playlists.get_position(Type.MPD,
+                                     Lp.player.current_track.id),
            songid)
+        print(msg)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
@@ -348,14 +381,30 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         track = Track(track_id)
         return "file: %s\nArtist: %s\nAlbum: %s\nAlbumArtist: %s\
-\nTitle: %s\nDate: %s\nGenre: %s\n" % (
+\nTitle: %s\nDate: %s\nGenre: %s\nTime: %s\nId: %s\nPos: %s\n" % (
                  track.path,
                  track.artist,
                  track.album.name,
                  track.album_artist,
                  track.name,
                  track.year,
-                 track.genre)
+                 track.genre,
+                 track.duration,
+                 track.id,
+                 track.position)
+
+    def _get_status(self):
+        """
+            Player status
+            @return str
+        """
+        state = Lp.player.get_status()
+        if state == Gst.State.PLAYING:
+            return 'play'
+        elif state == Gst.State.PAUSED:
+            return 'pause'
+        else:
+            return 'stop'
 
     def _on_current_changed(self, player):
         """
