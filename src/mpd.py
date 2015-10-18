@@ -1,5 +1,4 @@
 # Copyright (c) 2014-2015 Cedric Bellegarde <cedric.bellegarde@adishatz.org>
-# Copyright (C) 2011 kedals0@gmail.com
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +19,7 @@ from time import sleep
 from lollypop.define import Lp, Type
 from lollypop.objects import Track
 from lollypop.database_mpd import MpdDatabase
-from lollypop.utils import translate_artist_name
+from lollypop.utils import translate_artist_name, format_artist_name
 
 
 class MpdHandler(socketserver.BaseRequestHandler):
@@ -143,14 +142,17 @@ class MpdHandler(socketserver.BaseRequestHandler):
         playtime = 0
         # Search for filters
         i = 0
-        artist = None
+        artist = artist_id = None
         album = None
+        genre = genre_id = None
         date = ''
         while i < len(args) - 1:
             if args[i].lower() == 'album':
                 album = args[i+1]
             elif args[i].lower() == 'artist':
-                artist = args[i+1]
+                artist = format_artist_name(args[i+1])
+            elif args[i].lower() == 'genre':
+                genre = args[i+1]
             elif args[i].lower() == 'date':
                 date = args[i+1]
             i += 2
@@ -159,21 +161,17 @@ class MpdHandler(socketserver.BaseRequestHandler):
             year = int(date)
         except:
             year = None
-
+        if genre is not None:
+            genre_id = Lp.genres.get_id(genre)
+        if artist is not None:
+            artist_id = Lp.artists.get_id(artist)
         albums = []
-        if album is None:
-            if artist is not None:
-                artist_id = Lp.artists.get_id(artist)
-                if artist_id is not None:
-                    albums = Lp.artists.get_albums(artist_id)
+        if album is None and artist_id is not None:
+            albums = Lp.albums.get_ids(artist_id, genre_id)
         else:
-            if artist is None:
-                albums = self._mpddb.get_albums_ids_for(album, year)
-            else:
-                artist_id = Lp.artists.get_id(artist)
-                if artist_id is not None:
-                    albums = [Lp.albums.get_album_id(album, artist_id,
-                                                     year, None)]
+            albums = self._mpddb.get_albums_ids_for(album, artist_id,
+                                                    genre_id, year)
+
         for album_id in albums:
             for disc in Lp.albums.get_discs(album_id, None):
                 count += Lp.albums.get_count_for_disc(album_id, None, disc)
@@ -245,7 +243,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             if args[i].lower() == 'album':
                 album = args[i+1]
             elif args[i].lower() == 'artist':
-                artist = args[i+1]
+                artist = format_artist_name(args[i+1])
             elif args[i].lower() == 'date':
                 try:
                     date = int(args[i+1])
@@ -512,7 +510,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             if args[i].lower() == 'album':
                 album = args[i+1]
             elif args[i].lower() == 'artist':
-                artist = args[i+1]
+                artist = format_artist_name(args[i+1])
             elif args[i].lower() == 'date':
                 date = args[i+1]
             i += 2
@@ -529,7 +527,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                     albums = Lp.artists.get_albums(artist_id)
         else:
             if artist is None:
-                albums = self._mpddb.get_albums_ids_for(album, year)
+                albums = self._mpddb.get_albums_ids_for(album, None, year)
             else:
                 artist_id = Lp.artists.get_id(artist)
                 if artist_id is not None:

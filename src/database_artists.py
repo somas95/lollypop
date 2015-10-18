@@ -47,7 +47,7 @@ class ArtistsDatabase:
             v = result.fetchone()
             if v is not None:
                 return v[0]
-            return None
+            return Type.NONE
 
     def get_name(self, artist_id):
         """

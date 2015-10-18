@@ -14,7 +14,7 @@ from gettext import gettext as _
 import itertools
 
 from lollypop.sqlcursor import SqlCursor
-from lollypop.define import Lp
+from lollypop.define import Lp, Type
 
 
 class GenresDatabase:
@@ -46,7 +46,7 @@ class GenresDatabase:
             v = result.fetchone()
             if v is not None:
                 return v[0]
-            return None
+            return Type.NONE
 
     def get_name(self, genre_id):
         """
