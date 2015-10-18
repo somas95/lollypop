@@ -450,6 +450,34 @@ class AlbumsDatabase:
                 return v[0]
             return 0
 
+    def get_duration_for_disc(self, album_id, genre_id, disc):
+        """
+            Get duration for album_id/disc
+            @param album id as int
+            @param genre id as int
+            @param disc number as int
+            @return list of int
+        """
+        with SqlCursor(Lp.db) as sql:
+            if genre_id is not None and genre_id > 0:
+                result = sql.execute("SELECT SUM(tracks.duration)\
+                                      FROM tracks, track_genres\
+                                      WHERE tracks.album_id=?\
+                                      AND track_genres.track_id = tracks.rowid\
+                                      AND track_genres.genre_id=?\
+                                      AND discnumber=?", (album_id,
+                                                          genre_id,
+                                                          disc))
+            else:
+                result = sql.execute("SELECT SUM(tracks.duration)\
+                                      FROM tracks\
+                                      WHERE tracks.album_id=?\
+                                      AND discnumber=?", (album_id, disc))
+            v = result.fetchone()
+            if v is not None:
+                return v[0]
+            return 0
+
     def get_discs(self, album_id, genre_id):
         """
             Get disc numbers
