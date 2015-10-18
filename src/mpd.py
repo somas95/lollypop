@@ -471,9 +471,20 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         self._send_msg()
 
+    def _seek(self, args_array, list_ok):
+        """
+           Seek current
+           @param args as [str]
+           @param add list_OK as bool
+        """
+        args = self._get_args(args_array[0])
+        seek = int(args[1])
+        GLib.idle_add(Lp.player.seek, seek)
+        self._send_msg()
+
     def _seekid(self, args_array, list_ok):
         """
-            Send stats about db
+            Seek track id
             @param args as [str]
             @param add list_OK as bool
         """
