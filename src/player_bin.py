@@ -139,7 +139,7 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
                                       Gst.SeekFlags.FLUSH |
                                       Gst.SeekFlags.KEY_UNIT,
                                       position * Gst.SECOND)
-            self.emit("seeked", position)
+            self.emit('seeked', position)
 
     def get_position_in_track(self):
         """
