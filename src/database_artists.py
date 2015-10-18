@@ -23,12 +23,6 @@ class ArtistsDatabase:
         Artists database helper
     """
 
-    def __init__(self):
-        """
-            Init artists database object
-        """
-        pass
-
     def add(self, name):
         """
             Add a new artist to database
@@ -72,27 +66,21 @@ class ArtistsDatabase:
                 return translate_artist_name(v[0])
             return _("Unknown")
 
-    def get_names(self):
+    def get_albums(self, artist_id, year=None):
         """
-            Get artist names
-            @return Artists as [str]
-        """
-        with SqlCursor(Lp.db) as sql:
-            result = sql.execute("SELECT artists.name\
-                                  FROM artists, albums\
-                                  WHERE albums.artist_id = artists.rowid\
-                                  ORDER BY artists.name COLLATE NOCASE")
-            return list(itertools.chain(*result))
-
-    def get_albums(self, artist_id):
-        """
-            Get all availables albums for artist
+            Get all availables albums for artist and year
             @return Array of id as int
         """
         with SqlCursor(Lp.db) as sql:
-            result = sql.execute("SELECT rowid FROM albums\
-                                  WHERE artist_id=?\
-                                  ORDER BY year", (artist_id,))
+            if year is None:
+                result = sql.execute("SELECT rowid FROM albums\
+                                      WHERE artist_id=?\
+                                      ORDER BY year", (artist_id,))
+            else:
+                result = sql.execute("SELECT rowid FROM albums\
+                                      WHERE artist_id=?\
+                                      AND year=?\
+                                      ORDER BY year", (artist_id, year))
             return list(itertools.chain(*result))
 
     def get_compilations(self, artist_id):

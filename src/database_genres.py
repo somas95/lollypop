@@ -22,12 +22,6 @@ class GenresDatabase:
         Genres database helper
     """
 
-    def __init__(self):
-        """
-            Init genres database object
-        """
-        pass
-
     def add(self, name):
         """
             Add a new genre to database

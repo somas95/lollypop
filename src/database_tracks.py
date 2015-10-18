@@ -26,12 +26,6 @@ class TracksDatabase:
         set another one if you're in a thread
     """
 
-    def __init__(self):
-        """
-            Init tracks database object
-        """
-        pass
-
     def add(self, name, filepath, duration, tracknumber, discnumber,
             album_id, year, popularity, ltime, mtime):
         """

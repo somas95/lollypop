@@ -11,10 +11,11 @@ app_PYTHON = \
     codecs.py\
     collectionscanner.py\
     container.py\
+    database.py\
     database_albums.py\
     database_artists.py\
     database_genres.py\
-    database.py\
+    database_mpd.py\
     database_tracks.py\
     database_upgrade.py\
     define.py\

@@ -270,10 +270,8 @@ class ScannerTagReader(TagReader):
         """
         path = os.path.dirname(filepath)
         new = False
-        if no_album_artist:
-            album_id = Lp.albums.get_compilation_id(album_name, year)
-        else:
-            album_id = Lp.albums.get_id(album_name, artist_id, year)
+        album_id = Lp.albums.get_id(album_name, artist_id,
+                                    year, no_album_artist)
         if album_id is None:
             new = True
             album_id = Lp.albums.add(album_name, artist_id, no_album_artist,
