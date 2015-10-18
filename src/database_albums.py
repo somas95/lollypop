@@ -621,6 +621,18 @@ class AlbumsDatabase:
                                      (artist_id, genre_id))
             return list(itertools.chain(*result))
 
+    def get_ids_by_name(self, album_name):
+        """
+            Get all albums with name
+            @param album name as str
+            @return album id as int
+        """
+        with SqlCursor(Lp.db) as sql:
+            print(album_name)
+            result = sql.execute("SELECT rowid FROM albums where name=?",
+                                 (album_name,))
+            return list(itertools.chain(*result))
+
     def get_compilations(self, genre_id=None):
         """
             Get all compilations

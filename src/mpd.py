@@ -28,6 +28,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         self._playlist_version = 0
         self._idle_strings = []
+        self._current_song = None
         self._signal1 = Lp.player.connect('current-changed',
                                           self._on_player_changed)
         self._signal2 = Lp.player.connect('status-changed',
@@ -141,7 +142,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
         wanted = split[0]
         value = split[1]
         albums = []
-        print(wanted, value)
         if wanted == "artist":
             artist_id = Lp.artists.get_id(value)
             albums = Lp.artists.get_albums(artist_id)
@@ -162,9 +162,12 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = self._string_for_track_id(Lp.player.current_track.id)
+        if self._current_song is None:
+            self._current_song = self._string_for_track_id(
+                                                    Lp.player.current_track.id)
+        msg = self._current_song
         if list_ok:
-            msg += "list_OK\n"
+            msg = "list_OK\n"
         self.request.send(msg.encode("utf-8"))
 
     def _delete(self, args, list_ok):
@@ -359,10 +362,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = ""
-        if list_ok:
-            msg += "list_OK\n"
-        self.request.send(msg.encode("utf-8"))
+        self._playlistinfo(args, list_ok)
 
     def _plchangesposid(self, args, list_ok):
         """
@@ -414,6 +414,25 @@ class MpdHandler(socketserver.BaseRequestHandler):
         if track_id == Lp.player.current_track.id:
             GLib.idle_add(Lp.player.seek, seek)
 
+    def _search(self, args, list_ok):
+        """
+            Send stats about db
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        arg = self._get_args(args[0])
+        wanted = arg[0]
+        value = arg[1]
+        msg = ''
+        if wanted == 'album':
+            for album_id in Lp.albums.get_ids_by_name(value):
+                for track_id in Lp.albums.get_tracks(album_id, None):
+                    msg += self._string_for_track_id(track_id)
+        if list_ok:
+            msg += "list_OK\n"
+        print(msg)
+        self.request.send(msg.encode("utf-8"))
+
     def _setvol(self, args, list_ok):
         """
             Send stats about db
@@ -448,18 +467,16 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         if self._get_status() != 'stop':
             elapsed = Lp.player.get_position_in_track() / 1000000 / 60
-            msg = "time: %s:%s\nelapsed: %s\n" % (
-                int(elapsed),
-                Lp.player.current_track.duration,
-                elapsed)
+            time = Lp.player.current_track.duration
             songid = Lp.player.current_track.id
         else:
-            msg = ""
+            time = 0
+            elapsed = 0
             songid = -1
-        msg += "volume: %s\nrepeat: %s\nrandom: %s\
+        msg = "volume: %s\nrepeat: %s\nrandom: %s\
 \nsingle: %s\nconsume: %s\nplaylist: %s\
 \nplaylistlength: %s\nstate: %s\nsong: %s\
-\nsongid: %s\n" % (
+\nsongid: %s\ntime: %s:%s\nelapsed: %s\n" % (
            int(Lp.player.get_volume()*100),
            1,
            int(Lp.player.is_party()),
@@ -470,7 +487,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
            self._get_status(),
            Lp.playlists.get_position(Type.MPD,
                                      Lp.player.current_track.id),
-           songid)
+           songid,
+           int(elapsed),
+           time,
+           elapsed)
         if list_ok:
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
@@ -593,6 +613,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             Add player to idle
             @param player as Player
         """
+        self._current_song = None
         self._idle_strings.append("player")
 
     def _on_playlist_changed(self, playlists, playlist_id):
