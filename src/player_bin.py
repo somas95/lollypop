@@ -99,21 +99,21 @@ class BinPlayer(ReplayGainPlayer, BasePlayer):
                 self.load(self.next_track)
         else:
             self._playbin.set_state(Gst.State.PLAYING)
-            self.emit("status-changed")
+            self.emit('status-changed')
 
     def pause(self):
         """
             Change player state to PAUSED
         """
         self._playbin.set_state(Gst.State.PAUSED)
-        self.emit("status-changed")
+        self.emit('status-changed')
 
     def stop(self):
         """
             Change player state to STOPPED
         """
         self._stop()
-        self.emit("status-changed")
+        self.emit('status-changed')
 
     def play_pause(self):
         """

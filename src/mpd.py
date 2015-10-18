@@ -30,9 +30,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
         self._idle_strings = []
         self._signal1 = Lp.player.connect('current-changed',
                                           self._on_player_changed)
-        self._signal2 = Lp.player.connect('seeked',
+        self._signal2 = Lp.player.connect('status-changed',
                                           self._on_player_changed)
-        self._signal3 = Lp.playlists.connect('playlist-changed',
+        self._signal3 = Lp.player.connect('seeked',
+                                          self._on_player_changed)
+        self._signal4 = Lp.playlists.connect('playlist-changed',
                                              self._on_playlist_changed)
         welcome = "OK MPD 0.19.0\n"
         self.request.send(welcome.encode('utf-8'))
@@ -86,7 +88,8 @@ class MpdHandler(socketserver.BaseRequestHandler):
             print("MpdHandler::handle(): %s" % e)
         Lp.player.disconnect(self._signal1)
         Lp.player.disconnect(self._signal2)
-        Lp.playlists.disconnect(self._signal3)
+        Lp.player.disconnect(self._signal3)
+        Lp.playlists.disconnect(self._signal4)
 
     def _add(self, args, list_ok):
         """
@@ -261,20 +264,39 @@ class MpdHandler(socketserver.BaseRequestHandler):
             msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
 
+    def _pause(self, args, list_ok):
+        """
+            Pause track
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        print('pause')
+        try:
+            for arg in args:
+                pause = arg[1:-1]
+                if pause == "0":
+                    GLib.idle_add(Lp.player.play)
+                else:
+                    GLib.idle_add(Lp.player.pause)
+        except Exception as e:
+            print("MpdHandler::_pause(): %s" % e)
+
     def _play(self, args, list_ok):
         """
             Play track
             @param args as [str]
             @param add list_OK as bool
         """
-        for arg in args:
-            try:
-                if Lp.player.get_user_playlist_id() != Type.MPD:
-                    Lp.player.set_user_playlist(Type.MPD)
+        try:
+            if Lp.player.get_user_playlist_id() != Type.MPD:
+                Lp.player.set_user_playlist(Type.MPD)
+            if self._get_status == 'stop':
                 track_id = Lp.player.get_user_playlist()[0]
                 GLib.idle_add(Lp.player.load_in_playlist, track_id)
-            except Exception as e:
-                print("MpdHandler::_play(): %s" % e)
+            else:
+                GLib.idle_add(Lp.player.play)
+        except Exception as e:
+            print("MpdHandler::_play(): %s" % e)
 
     def _playid(self, args, list_ok):
         """
@@ -378,7 +400,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        if Lp.player.is_playing():
+        if self._get_status() != 'stop':
             elapsed = Lp.player.get_position_in_track() / 1000000 / 60
             msg = "time: %s:%s\nelapsed: %s\n" % (
                 int(elapsed),
@@ -408,6 +430,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
         self.request.send(msg.encode("utf-8"))
 
     def _sticker(self, args, list_ok):
+        """
+            Send stickers
+            @param args as [str]
+            @param add list_OK as bool
+        """
         for arg in args:
             args_array = arg.split('"')
             msg = ""
@@ -424,6 +451,14 @@ class MpdHandler(socketserver.BaseRequestHandler):
             if list_ok:
                 msg += "list_OK\n"
             self.request.send(msg.encode("utf-8"))
+
+    def _stop(self, args, list_ok):
+        """
+            Stop player
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        GLib.idle_add(Lp.player.stop)
 
     def _tagtypes(self, args, list_ok):
         """
