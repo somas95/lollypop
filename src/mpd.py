@@ -125,8 +125,15 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = "command: status\ncommand: stats\ncommand: playlistinfo\
-\ncommand: idle\ncommand: currentsong\ncommand: lsinfo\ncommand: list\n"
+        msg = "command: add\ncommand: clear\ncommand: channels\ncommand:count\
+\ncommand: currentsong\ncommand: delete\ncommand:idle\ncommand:noidle\
+\ncommand: list\ncommand: listallinfo\ncommand: listplaylists\ncommand: lsinfo\
+\ncommand: next\ncommand: outputs\ncommand: pause\ncommand: play\
+\ncommand: playid\ncommand: playlistinfo\ncommand: plchanges\
+\ncommand: plchangesposid\ncommand: prev\ncommand: replay_gain_status\
+\ncommand: repeat\ncommand: seek\ncommand: seekid\ncommand: search\
+\ncommand: setvol\ncommand: stats\ncommand: status\ncommand: sticker\
+\ncommand: stop\ncommand: tagtypes\ncommand: update\ncommand: urlhandlers\n"
         if list_ok:
             msg += "list_OK\n"
         self._send_msg(msg)
