@@ -19,6 +19,7 @@ from time import sleep
 
 from lollypop.define import Lp, Type
 from lollypop.objects import Track
+from lollypop.utils import translate_artist_name, format_artist_name
 
 
 class MpdHandler(socketserver.BaseRequestHandler):
@@ -138,22 +139,27 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
+        count = 1
+        playtime = 1
         split = self._get_args(args[0])
-        wanted = split[0]
-        value = split[1]
-        albums = []
-        if wanted == "artist":
-            artist_id = Lp.artists.get_id(value)
-            albums = Lp.artists.get_albums(artist_id)
-        count = 0
-        playtime = 0
-        for album_id in albums:
-            for disc in Lp.albums.get_discs(album_id, None):
-                count += Lp.albums.get_count_for_disc(album_id, None, disc)
-                playtime += Lp.albums.get_duration_for_disc(album_id,
-                                                            None,
-                                                            disc)
+        if len(split) == 2:
+            wanted = split[0]
+            value = split[1]
+            albums = []
+            if wanted == "artist" and value != '':
+                artist_id = Lp.artists.get_id(format_artist_name(value))
+                if artist_id is not None:
+                    albums = Lp.artists.get_albums(artist_id)
+                    albums += Lp.artists.get_compilations(artist_id)
+            for album_id in albums:
+                for disc in Lp.albums.get_discs(album_id, None):
+                    count += Lp.albums.get_count_for_disc(album_id, None, disc)
+                    playtime += Lp.albums.get_duration_for_disc(album_id,
+                                                                None,
+                                                                disc)
         msg = "songs: %s\nplaytime: %s\n" % (count, playtime)
+        if list_ok:
+            msg += "list_OK\n"
         self.request.send(msg.encode("utf-8"))
 
     def _currentsong(self, args, list_ok):
@@ -213,7 +219,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         elif arg[0].lower() == 'artist':
             results = Lp.artists.get_names()
             for name in results:
-                msg += 'Artist: '+name+'\n'
+                msg += 'Artist: '+translate_artist_name(name)+'\n'
         elif arg[0].lower() == 'genre':
             results = Lp.genres.get_names()
             for name in results:
