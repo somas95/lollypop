@@ -45,28 +45,28 @@ class MpdHandler(socketserver.BaseRequestHandler):
         self.request.send("OK MPD 0.19.0\n".encode('utf-8'))
         try:
             while self.server.running:
-                list_ok = False
                 # sleep(1)
                 data = self.request.recv(4096).decode('utf-8')
+                print(data)
                 # We check if we need to wait for a command_list_end
-                list_begin = data.startswith('command_list_begin')
+                list_begin = data.startswith('command_list_begin') or\
+                    data.startswith('command_list_ok_begin')
+                list_ok = data.startswith('command_list_ok_begin')
+                # Check for list_ok
                 list_end = data.endswith('command_list_end\n')
                 if list_end:
                     data = data.replace('command_list_end\n', '')
                     list_begin = False
-                # We remove begin/end
-                data = data.replace('command_list_begin\n', '')
                 while list_begin:
                     data += self.request.recv(1024).decode('utf-8')
                     if data.endswith('command_list_end\n'):
-                        data = data.replace('command_list_end\n', '')
                         list_begin = False
                 if data == '':
                     raise IOError
                 else:
-                    if data.find('command_list_ok_begin') != -1:
-                        list_ok = True
-                        data = data.replace('command_list_ok_begin\n', '')
+                    data = data.replace('command_list_begin\n', '')
+                    data = data.replace('command_list_ok_begin\n', '')
+                    data = data.replace('command_list_end\n', '')
                     cmds = data.split('\n')
                     if cmds:
                         try:
@@ -417,12 +417,35 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
+        # TODO implement range
         tracks_ids = Lp.playlists.get_tracks_ids(Type.MPD)
         for args in args_array:
             arg = self._get_args(args)
             orig = int(arg[0])
             dst = int(arg[1])
             track_id = tracks_ids[orig]
+            del tracks_ids[orig]
+            tracks_ids.insert(dst, track_id)
+
+        Lp.playlists.clear(Type.MPD)
+        tracks = []
+        for track_id in tracks_ids:
+            tracks.append(Track(track_id))
+        Lp.playlists.add_tracks(Type.MPD, tracks)
+        self._send_msg('', list_ok)
+
+    def _moveid(self, args_array, list_ok):
+        """
+            Move id in playlist
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        tracks_ids = Lp.playlists.get_tracks_ids(Type.MPD)
+        for args in args_array:
+            arg = self._get_args(args)
+            track_id = int(arg[0])
+            orig = tracks_ids.index(track_id)
+            dst = int(arg[1])
             del tracks_ids[orig]
             tracks_ids.insert(dst, track_id)
 
