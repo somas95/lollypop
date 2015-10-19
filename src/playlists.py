@@ -252,7 +252,7 @@ class Playlists(GObject.GObject):
                          WHERE playlist_id=?", (playlist_id,))
             sql.commit()
             if notify:
-                GLib.idle_add(self.emit, "playlist-changed", playlist_id)
+                GLib.idle_add(self.emit, 'playlist-changed', playlist_id)
 
     def add_tracks(self, playlist_id, tracks):
         """
@@ -273,7 +273,7 @@ class Playlists(GObject.GObject):
                              WHERE rowid=?", (datetime.now().strftime('%s'),
                                               playlist_id))
                 sql.commit()
-                GLib.idle_add(self.emit, "playlist-changed", playlist_id)
+                GLib.idle_add(self.emit, 'playlist-changed', playlist_id)
 
     def remove_tracks(self, playlist_id, tracks):
         """
@@ -287,7 +287,7 @@ class Playlists(GObject.GObject):
                              WHERE filepath=?\
                              AND playlist_id=?", (track.path, playlist_id))
             sql.commit()
-            GLib.idle_add(self.emit, "playlist-changed", playlist_id)
+            GLib.idle_add(self.emit, 'playlist-changed', playlist_id)
 
     def get_position(self, playlist_id, track_id):
         """
