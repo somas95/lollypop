@@ -48,15 +48,21 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 # sleep(1)
                 data = self.request.recv(4096).decode('utf-8')
                 # We check if we need to wait for a command_list_end
-                data_ok = not data.startswith('command_list_begin')
+                list_begin = data.startswith('command_list_begin')
+                list_end = data.endswith('command_list_end\n')
+                if list_end:
+                    data = data.replace('command_list_end\n', '')
+                    list_begin = False
                 # We remove begin/end
                 data = data.replace('command_list_begin\n', '')
-                data = data.replace('command_list_end\n', '')
-                while not data_ok:
+                while list_begin:
+                    print('BOUCLE')
                     data += self.request.recv(1024).decode('utf-8')
+                    print('PASBOUCLE')
                     if data.endswith('command_list_end\n'):
                         data = data.replace('command_list_end\n', '')
-                        data_ok = True
+                        list_begin = False
+                print('DATATA', data)
                 if data != '':
                     if data.find('command_list_ok_begin') != -1:
                         list_ok = True
@@ -74,6 +80,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                                     if command not in cmd_dict:
                                         cmd_dict[command] = []
                                     cmd_dict[command].append(cmd[size:])
+                            print(cmd_dict)
                             for key in cmd_dict.keys():
                                 call = getattr(self, '_%s' % key)
                                 call(cmd_dict[key], list_ok)
@@ -215,14 +222,15 @@ class MpdHandler(socketserver.BaseRequestHandler):
             Lp.playlists.add_tracks(Type.MPD, tracks)
 
     def _idle(self, args_array, list_ok):
+        msg = ''
         self.request.settimeout(0)
         MpdHandler.idle = self
         while not self._idle_strings and MpdHandler.idle == self:
             print('IDLE', MpdHandler.idle, self, self._idle_strings)
             sleep(1)
-        msg = ''
-        for string in self._idle_strings:
-            msg += "changed: %s\n" % string
+        if MpdHandler.idle == self:
+            for string in self._idle_strings:
+                msg += "changed: %s\n" % string
         self._send_msg(msg)
         self.request.settimeout(10)
 
@@ -290,24 +298,21 @@ class MpdHandler(socketserver.BaseRequestHandler):
             msg += "list_OK\n"
         self._send_msg(msg)
 
+    def _listall(self, args_array, list_ok):
+        """
+            List all tracks
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        self._send_msg()
+
     def _listallinfo(self, args_array, list_ok):
         """
             List all tracks
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = ""
-        i = 0
-        for track_id in Lp.tracks.get_ids():
-            msg += self._string_for_track_id(track_id)
-            if i > 100:
-                self.request.send(msg.encode('utf-8'))
-                msg = ""
-                i = 0
-            i += 1
-        if list_ok:
-            msg += "list_OK\n"
-        self._send_msg(msg)
+        self._send_msg()
 
     def _listplaylists(self, args_array, list_ok):
         """
