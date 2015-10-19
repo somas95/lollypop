@@ -514,8 +514,17 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
             Add a new playlist
         """
-        arg = self._get_args(args_array[0])[0]
-        Lp.playlists.add(arg)
+        args = self._get_args(args_array[0])
+        playlist_id = Lp.playlists.get_id(args[0])
+        tracks = []
+        if not Lp.playlists.exists(playlist_id):
+            Lp.playlists.add(args[0])
+            playlist_id = Lp.playlists.get_id(args[0])
+        for arg in args[1:]:
+            track_id = Lp.tracks.get_id_by_path(arg)
+            tracks.append(Track(track_id))
+        if tracks:
+            Lp.playlists.add_tracks(playlist_id, tracks)
         self._send_msg('', list_ok)
 
     def _playlistinfo(self, args_array, list_ok):
@@ -861,6 +870,8 @@ class MpdHandler(socketserver.BaseRequestHandler):
         if playlist_id == Type.MPD:
             self._idle_strings.append('playlist')
             self._playlist_version += 1
+        else:
+            self._idle_strings.append('stored_playlist')
 
 
 class MpdServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
