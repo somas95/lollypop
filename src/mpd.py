@@ -65,24 +65,18 @@ class MpdHandler(socketserver.BaseRequestHandler):
                     print(cmds)
                     if cmds:
                         try:
-                            if list_ok:
-                                for cmd in cmds:
-                                    command = cmd.split(' ')[0]
-                                    if command != '':
-                                        size = len(command) + 1
-                                        call = getattr(self, '_%s' % command)
-                                        args = cmd[size:]
-                                        call([args], list_ok)
-                            else:
-                                args = []
-                                command = cmds[0].split(' ')[0]
-                                size = len(command) + 1
-                                call = getattr(self, '_%s' % command)
-                                for cmd in cmds:
-                                    arg = cmd[size:]
-                                    if arg != '':
-                                        args.append(arg)
-                                call(args, list_ok)
+                            # Group commands
+                            cmd_dict = {}
+                            for cmd in cmds:
+                                command = cmd.split(' ')[0]
+                                if command != '':
+                                    size = len(command) + 1
+                                    if command not in cmd_dict:
+                                        cmd_dict[command] = []
+                                    cmd_dict[command].append(cmd[size:])
+                            for key in cmd_dict.keys():
+                                call = getattr(self, '_%s' % key)
+                                call(cmd_dict[key], list_ok)
                         except Exception as e:
                             print("MpdHandler::handle(): ", command, e)
                 self._idle_strings = []
