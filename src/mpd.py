@@ -23,6 +23,8 @@ from lollypop.utils import translate_artist_name, format_artist_name
 
 
 class MpdHandler(socketserver.BaseRequestHandler):
+    idle = None
+
     def handle(self):
         """
             One function to handle them all
@@ -125,8 +127,8 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        msg = "command: add\ncommand: clear\ncommand: channels\ncommand:count\
-\ncommand: currentsong\ncommand: delete\ncommand:idle\ncommand:noidle\
+        msg = "command: add\ncommand: clear\ncommand: channels\ncommand: count\
+\ncommand: currentsong\ncommand: delete\ncommand: idle\ncommand: noidle\
 \ncommand: list\ncommand: listallinfo\ncommand: listplaylists\ncommand: lsinfo\
 \ncommand: next\ncommand: outputs\ncommand: pause\ncommand: play\
 \ncommand: playid\ncommand: playlistinfo\ncommand: plchanges\
@@ -220,17 +222,19 @@ class MpdHandler(socketserver.BaseRequestHandler):
 
     def _idle(self, args_array, list_ok):
         self.request.settimeout(0)
-        while not self._idle_strings:
+        MpdHandler.idle = self
+        while not self._idle_strings and MpdHandler.idle == self:
+            print('IDLE', MpdHandler.idle, self, self._idle_strings)
             sleep(1)
-        if self._idle_strings != Type.NONE:
-            msg = ''
-            for string in self._idle_strings:
-                msg += "changed: %s\n" % string
-            self._send_msg(msg)
+        msg = ''
+        for string in self._idle_strings:
+            msg += "changed: %s\n" % string
+        self._send_msg(msg)
         self.request.settimeout(10)
 
     def _noidle(self, args_array, list_ok):
-        self._idle_strings = Type.NONE
+        MpdHandler.idle = None
+        self._send_msg()
 
     def _list(self, args_array, list_ok):
         """
@@ -646,8 +650,8 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param add list_OK as bool
         """
         msg = "tagtype: Artist\ntagtype: Album\ntagtype: Title\
-\ntagype: Track\ntagtype: Name\ntagype: Genre\ntagtype: Data\
-\ntagype: Performer\n"
+\ntagtype: Track\ntagtype: Name\ntagtype: Genre\ntagtype: Date\
+\ntagtype: Performer\ntagtype: Disc\n"
         if list_ok:
             msg += "list_OK\n"
         self._send_msg(msg)
