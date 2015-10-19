@@ -15,6 +15,7 @@ from gi.repository import GLib, Gst
 import socketserver
 import threading
 from time import sleep
+from datetime import datetime
 
 from lollypop.define import Lp, Type
 from lollypop.objects import Track
@@ -316,7 +317,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         i = 0
         msg = ""
-        for track_id in Lp.tracks.get_ids():
+        arg = self._get_args(args_array[0])[0]
+        playlist_id = Lp.playlists.get_id(arg)
+        for track_id in Lp.tracks.get_ids(playlist_id):
             msg += self._string_for_track_id(track_id)
             if i > 100:
                 self.request.send(msg.encode("utf-8"))
@@ -329,15 +332,35 @@ class MpdHandler(socketserver.BaseRequestHandler):
             msg += "list_OK\n"
         self._send_msg(msg)
 
+    def _listplaylistinfo(self, args_array, list_ok):
+        """
+            List playlist informations
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        arg = self._get_args(args_array[0])[0]
+        playlist_id = Lp.playlists.get_id(arg)
+        msg = ""
+        print(playlist_id)
+        for track_id in Lp.playlists.get_tracks_ids(playlist_id):
+            msg += self._string_for_track_id(track_id)
+        if list_ok:
+            msg += "list_OK\n"
+        self._send_msg(msg)
+
     def _listplaylists(self, args_array, list_ok):
         """
             Send available playlists
             @param args as [str]
             @param add list_OK as bool
         """
+        dt = datetime.utcnow()
+        dt = dt.replace(microsecond=0)
         msg = ""
         for (playlist_id, name) in Lp.playlists.get():
-            msg += "playlist: %s\n" % name
+            msg += "playlist: %s\nLast-Modified: %s\n" % (
+                                                      name,
+                                                      '%sZ' % dt.isoformat())
         if list_ok:
             msg += "list_OK\n"
         self._send_msg(msg)
