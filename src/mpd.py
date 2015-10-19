@@ -577,13 +577,12 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 if artist_id is not None:
                     albums = Lp.artists.get_albums(artist_id)
         else:
-            if artist is None:
-                albums = self._mpddb.get_albums_ids_for(album, None, year)
-            else:
-                artist_id = Lp.artists.get_id(artist)
-                if artist_id is not None:
-                    albums = [Lp.albums.get_album_id(album, artist_id,
-                                                     year, None)]
+            artist_id = None if artist is None else Lp.artists.get_id(artist)
+            albums = self._mpddb.get_albums_ids_for(album, artist_id,
+                                                    None, year)
+            if not albums:
+                albums = self._mpddb.get_albums_ids_for(album, artist_id,
+                                                        None, Type.NONE)
         for album_id in albums:
             for track_id in Lp.albums.get_tracks(album_id, None):
                 msg += self._string_for_track_id(track_id)

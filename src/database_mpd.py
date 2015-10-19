@@ -13,7 +13,7 @@
 import itertools
 
 from lollypop.sqlcursor import SqlCursor
-from lollypop.define import Lp
+from lollypop.define import Lp, Type
 
 
 class MpdDatabase:
@@ -53,7 +53,7 @@ class MpdDatabase:
             Get all availables albums with name and year
             @param album as str
             @param genre as int
-            @param year as int
+            @param year as int or None or Type.NONE (None or valued)
             @return Array of id as int
         """
         with SqlCursor(Lp.db) as sql:
@@ -64,6 +64,11 @@ class MpdDatabase:
                                               FROM albums\
                                               WHERE name = ?\
                                               AND year is null",
+                                             (album,))
+                    elif year == Type.NONE:
+                        result = sql.execute("SELECT rowid\
+                                              FROM albums\
+                                              WHERE name = ?",
                                              (album,))
                     else:
                         result = sql.execute("SELECT rowid\
@@ -80,7 +85,15 @@ class MpdDatabase:
                                       AND album_genres.genre_id=?\
                                       AND album_genres.album_id=albums.rowid\
                                       AND year is null",
-                                     (album, genre, year))
+                                     (album, genre))
+                    elif year == Type.NONE:
+                        result = sql.execute(
+                                     "SELECT rowid\
+                                      FROM albums, album_genres\
+                                      WHERE name = ?\
+                                      AND album_genres.genre_id=?\
+                                      AND album_genres.album_id=albums.rowid",
+                                     (album, genre))
                     else:
                         result = sql.execute(
                                      "SELECT rowid\
@@ -116,7 +129,16 @@ class MpdDatabase:
                                       AND album_genres.genre_id=?\
                                       AND album_genres.album_id=albums.rowid\
                                       AND year is null",
-                                     (album, artist_id, genre, year))
+                                     (album, artist_id, genre))
+                    elif year == Type.NONE:
+                        result = sql.execute(
+                                     "SELECT rowid\
+                                      FROM albums, album_genres\
+                                      WHERE name = ?\
+                                      AND artist_id = ?\
+                                      AND album_genres.genre_id=?\
+                                      AND album_genres.album_id=albums.rowid",
+                                     (album, artist_id, genre))
                     else:
                         result = sql.execute(
                                      "SELECT rowid\
