@@ -261,16 +261,19 @@ class Playlists(GObject.GObject):
             @param tracks as [Track]
         """
         with SqlCursor(self) as sql:
+            changed = False
             for track in tracks:
                 if not self.exists_track(playlist_id, track.id):
+                    changed = True
                     sql.execute("INSERT INTO tracks"
                                 " VALUES (?, ?)",
                                 (playlist_id, track.path))
-            sql.execute("UPDATE playlists SET mtime=?\
-                         WHERE rowid=?", (datetime.now().strftime('%s'),
-                                          playlist_id))
-            sql.commit()
-            GLib.idle_add(self.emit, "playlist-changed", playlist_id)
+            if changed:
+                sql.execute("UPDATE playlists SET mtime=?\
+                             WHERE rowid=?", (datetime.now().strftime('%s'),
+                                              playlist_id))
+                sql.commit()
+                GLib.idle_add(self.emit, "playlist-changed", playlist_id)
 
     def remove_tracks(self, playlist_id, tracks):
         """

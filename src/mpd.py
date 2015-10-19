@@ -337,10 +337,24 @@ class MpdHandler(socketserver.BaseRequestHandler):
         """
         msg = ""
         for (playlist_id, name) in Lp.playlists.get():
-            msg += "Playlist: %s\n" % name
+            msg += "playlist: %s\n" % name
         if list_ok:
             msg += "list_OK\n"
         self._send_msg(msg)
+
+    def _load(self, args_array, list_ok):
+        """
+            Load playlist
+            @param args as [str]
+            @param add list_OK as bool
+        """
+        arg = self._get_args(args_array[0])[0]
+        playlist_id = Lp.playlists.get_id(arg)
+        tracks = []
+        for track_id in Lp.playlists.get_tracks_ids(playlist_id):
+            tracks.append(Track(track_id))
+        Lp.playlists.add_tracks(Type.MPD, tracks)
+        self._send_msg()
 
     def _lsinfo(self, args_array, list_ok):
         """
@@ -408,16 +422,13 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        try:
-            if Lp.player.get_user_playlist_id() != Type.MPD:
-                Lp.player.set_user_playlist(Type.MPD)
-            if self._get_status == 'stop':
-                track_id = Lp.player.get_user_playlist()[0]
-                GLib.idle_add(Lp.player.load_in_playlist, track_id)
-            else:
-                GLib.idle_add(Lp.player.play)
-        except Exception as e:
-            print("MpdHandler::_play(): %s" % e)
+        if Lp.player.get_user_playlist_id() != Type.MPD:
+            Lp.player.set_user_playlist(Type.MPD)
+        if self._get_status == 'stop':
+            track_id = Lp.player.get_user_playlist()[0]
+            GLib.idle_add(Lp.player.load_in_playlist, track_id)
+        else:
+            GLib.idle_add(Lp.player.play)
         self._send_msg()
 
     def _playid(self, args_array, list_ok):
@@ -463,7 +474,12 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        self._playlistinfo(args_array, list_ok)
+        msg = ""
+        for track_id in Lp.playlists.get_tracks_ids(Type.MPD):
+            msg += self._string_for_track_id(track_id)
+        if list_ok:
+            msg += "list_OK\n"
+        self._send_msg(msg)
 
     def _plchangesposid(self, args_array, list_ok):
         """
