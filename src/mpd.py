@@ -421,9 +421,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
         for args in args_array:
             arg = self._get_args(args)
             orig = int(arg[0])
-            dest = int(arg[1])
-            tracks_ids[orig], tracks_ids[dest] = \
-                tracks_ids[dest], tracks_ids[orig]
+            dst = int(arg[1])
+            track_id = tracks_ids[orig]
+            del tracks_ids[orig]
+            tracks_ids.insert(dst, track_id)
 
         Lp.playlists.clear(Type.MPD)
         tracks = []
