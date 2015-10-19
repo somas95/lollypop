@@ -45,7 +45,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 msg = "OK\n"
                 list_ok = False
                 # sleep(1)
-                data = self.request.recv(1024).decode('utf-8')
+                data = self.request.recv(4096).decode('utf-8')
                 # We check if we need to wait for a command_list_end
                 data_ok = not data.startswith('command_list_begin')
                 # We remove begin/end
@@ -139,18 +139,20 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        count = 1
-        playtime = 1
+        count = 0
+        playtime = 0
         split = self._get_args(args[0])
         if len(split) == 2:
             wanted = split[0]
             value = split[1]
             albums = []
-            if wanted == "artist" and value != '':
+            if wanted == 'artist' and value != '':
                 artist_id = Lp.artists.get_id(format_artist_name(value))
                 if artist_id is not None:
                     albums = Lp.artists.get_albums(artist_id)
-                    albums += Lp.artists.get_compilations(artist_id)
+                    # albums += Lp.artists.get_compilations(artist_id)
+            elif wanted == 'album' and value != '':
+                albums = Lp.albums.get_ids_by_name(value)
             for album_id in albums:
                 for disc in Lp.albums.get_discs(album_id, None):
                     count += Lp.albums.get_count_for_disc(album_id, None, disc)
@@ -160,6 +162,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         msg = "songs: %s\nplaytime: %s\n" % (count, playtime)
         if list_ok:
             msg += "list_OK\n"
+        msg += "OK\n"
         self.request.send(msg.encode("utf-8"))
 
     def _currentsong(self, args, list_ok):
@@ -211,21 +214,56 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param add list_OK as bool
         """
         msg = ""
+        print("_list(): ", args)
         arg = self._get_args(args[0])
+
+        # Search for filters
+        i = 1
+        artist = None
+        album = None
+        date = None
+        while i < len(arg) - 1:
+            if arg[i].lower() == 'album':
+                album = arg[i+1]
+            elif arg[i].lower() == 'artist':
+                artist = arg[i+1]
+            elif arg[i].lower() == 'date':
+                date = int(arg[i+1])
+            i += 2
+
+        if arg[0].lower() == 'file':
+            if artist is not None and album is not None:
+                artist_id = Lp.artists.get_id(artist)
+                album_id = Lp.albums.get_id(album, artist_id, date)
+                for track in Lp.albums.get_tracks(album_id, None):
+                    path = Lp.tracks.get_path(track)
+                    msg += "File: "+path+"\n"
         if arg[0].lower() == 'album':
-            results = Lp.albums.get_names()
-            for name in results:
-                msg += 'Album: '+name+'\n'
+            if artist is not None:
+                albums_ids = Lp.albums.get_ids()
+            else:
+                artist_id = Lp.artists.get_id(artist)
+                albums_ids = Lp.artists.get_albums(artist_id)
+            for album_id in albums_ids:
+                msg += "Album: "+Lp.albums.get_name(album_id)+"\n"
         elif arg[0].lower() == 'artist':
             results = Lp.artists.get_names()
             for name in results:
-                msg += 'Artist: '+translate_artist_name(name)+'\n'
+                msg += "Artist: "+translate_artist_name(name)+"\n"
+                break
         elif arg[0].lower() == 'genre':
             results = Lp.genres.get_names()
             for name in results:
-                msg += 'Genre: '+name+'\n'
+                msg += "Genre: "+name+"\n"
+        elif arg[0].lower() == 'date':
+            if artist is not None and album is not None:
+                artist_id = Lp.artists.get_id(artist)
+                album_id = Lp.albums.get_id(album, artist_id, date)
+                date = Lp.albums.get_year(album_id)
+                msg += "Date: "+date+"\n"
         if list_ok:
             msg += "list_OK\n"
+        msg += "OK\n"
         self.request.send(msg.encode("utf-8"))
 
     def _listallinfo(self, args, list_ok):
