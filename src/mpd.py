@@ -234,7 +234,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
 
     def _noidle(self, args_array, list_ok):
         MpdHandler.idle = None
-        self._send_msg()
 
     def _list(self, args_array, list_ok):
         """
