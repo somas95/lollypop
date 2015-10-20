@@ -45,9 +45,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         self.request.send("OK MPD 0.19.0\n".encode('utf-8'))
         try:
             while self.server.running:
-                # sleep(1)
                 data = self.request.recv(4096).decode('utf-8')
-                print(data)
                 # We check if we need to wait for a command_list_end
                 list_begin = data.startswith('command_list_begin') or\
                     data.startswith('command_list_ok_begin')
@@ -79,7 +77,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
                                     if command not in cmd_dict:
                                         cmd_dict[command] = []
                                     cmd_dict[command].append(cmd[size:])
-                            print(cmd_dict)
                             for key in cmd_dict.keys():
                                 if key.find("idle") == -1:
                                     self._noidle(None, None)
@@ -150,10 +147,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
         playtime = 0
         # Search for filters
         i = 0
-        artist = artist_id = None
-        album = None
-        genre = genre_id = None
-        date = ''
+        artist = artist_id = year = album = genre = genre_id = None
         while i < len(args) - 1:
             if args[i].lower() == 'album':
                 album = args[i+1]
@@ -165,10 +159,16 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 date = args[i+1]
             i += 2
 
-        try:
-            year = int(date)
-        except:
-            year = None
+        # Artist have albums with different dates so
+        # we do not want None in year 
+        if artist_id is not None or album is not None:
+            try:
+                year = int(date)
+            except:
+                year = None
+        else:
+            year = Type.NONE
+
         if genre is not None:
             genre_id = Lp.genres.get_id(genre)
         if artist is not None:
@@ -233,52 +233,49 @@ class MpdHandler(socketserver.BaseRequestHandler):
 
         # Search for filters
         i = 1
-        artist = None
+        artist = artist_id = None
         album = None
-        date = None
+        genre = genre_id = None
+        date = ''
         while i < len(args) - 1:
             if args[i].lower() == 'album':
                 album = args[i+1]
             elif args[i].lower() == 'artist':
                 artist = format_artist_name(args[i+1])
+            elif args[i].lower() == 'genre':
+                genre = args[i+1]
             elif args[i].lower() == 'date':
-                try:
-                    date = int(args[i+1])
-                except:
-                    date = None
+                date = args[i+1]
             i += 2
+
+        try:
+            year = int(date)
+        except:
+            year = None
+        if genre is not None:
+            genre_id = Lp.genres.get_id(genre)
+        if artist is not None:
+            artist_id = Lp.artists.get_id(artist)
+
         if args[0].lower() == 'file':
-            if artist is not None and album is not None:
-                artist_id = Lp.artists.get_id(artist)
-                album_id = Lp.albums.get_album_id(album, artist_id, date, None)
-                for track in Lp.albums.get_tracks(album_id, None):
-                    path = Lp.tracks.get_path(track)
-                    msg += "File: "+path+"\n"
+            for path in self._mpddb.get_tracks_paths(album, artist_id,
+                                                     genre_id, year):
+                msg += "File: "+path+"\n"
         if args[0].lower() == 'album':
-            if artist is None:
-                albums_ids = Lp.albums.get_ids()
-            else:
-                artist_id = Lp.artists.get_id(artist)
-                albums_ids = Lp.artists.get_albums(artist_id)
-            for album_id in albums_ids:
-                msg += "Album: "+Lp.albums.get_name(album_id)+"\n"
+            for album in self._mpddb.get_albums_names(artist_id,
+                                                      genre_id, year):
+                msg += "Album: "+album+"\n"
         elif args[0].lower() == 'artist':
-            results = self._mpddb.get_artists_names()
-            for name in results:
-                msg += "Artist: "+translate_artist_name(name)+"\n"
+            for artist in self._mpddb.get_artists_names(genre_id):
+                msg += "Artist: "+translate_artist_name(artist)+"\n"
         elif args[0].lower() == 'genre':
             results = Lp.genres.get_names()
             for name in results:
                 msg += "Genre: "+name+"\n"
         elif args[0].lower() == 'date':
-            if artist is not None and album is not None:
-                artist_id = Lp.artists.get_id(artist)
-                for year in self._mpddb.get_albums_years_by_name(album,
-                                                                 artist_id):
-                    msg += "Date: "+str(year)+"\n"
-            else:
-                for year in self._mpddb.get_albums_years():
-                    msg += "Date: "+str(year)+"\n"
+            for year in self._mpddb.get_albums_years(album, artist_id,
+                                                     genre_id):
+                msg += "Date: "+str(year)+"\n"
         self._send_msg(msg, list_ok)
 
     def _listall(self, args_array, list_ok):
@@ -316,7 +313,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
         arg = self._get_args(args_array[0])[0]
         playlist_id = Lp.playlists.get_id(arg)
         msg = ""
-        print(playlist_id)
         for track_id in Lp.playlists.get_tracks_ids(playlist_id):
             msg += self._string_for_track_id(track_id)
         self._send_msg(msg, list_ok)
@@ -584,42 +580,37 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        args = self._get_args(args_array[0])
         msg = ""
+        args = self._get_args(args_array[0])
         # Search for filters
         i = 0
-        artist = None
+        artist = artist_id = None
         album = None
+        genre = genre_id = None
         date = ''
         while i < len(args) - 1:
             if args[i].lower() == 'album':
                 album = args[i+1]
             elif args[i].lower() == 'artist':
                 artist = format_artist_name(args[i+1])
+            elif args[i].lower() == 'genre':
+                genre = args[i+1]
             elif args[i].lower() == 'date':
                 date = args[i+1]
             i += 2
+
         try:
             year = int(date)
         except:
             year = None
+        if genre is not None:
+            genre_id = Lp.genres.get_id(genre)
+        if artist is not None:
+            artist_id = Lp.artists.get_id(artist)
 
-        albums = []
-        if album is None:
-            if artist is not None:
-                artist_id = Lp.artists.get_id(artist)
-                if artist_id is not None:
-                    albums = Lp.artists.get_albums(artist_id)
-        else:
-            artist_id = None if artist is None else Lp.artists.get_id(artist)
-            albums = self._mpddb.get_albums_ids_for(album, artist_id,
-                                                    None, year)
-            if not albums:
-                albums = self._mpddb.get_albums_ids_for(album, artist_id,
-                                                        None, Type.NONE)
-        for album_id in albums:
-            for track_id in Lp.albums.get_tracks(album_id, None):
-                msg += self._string_for_track_id(track_id)
+        for track_id in self._mpddb.get_tracks_ids(album, artist_id,
+                                               genre_id, year):
+            msg += self._string_for_track_id(track_id)
         self._send_msg(msg, list_ok)
 
     def _setvol(self, args_array, list_ok):
@@ -754,7 +745,7 @@ class MpdHandler(socketserver.BaseRequestHandler):
                      track.album.name,
                      track.album_artist,
                      track.name,
-                     track.year,
+                     track.album.year,
                      track.genre,
                      track.duration,
                      track.id,
@@ -799,7 +790,6 @@ class MpdHandler(socketserver.BaseRequestHandler):
         else:
             msg += "OK\n"
         self.request.send(msg.encode("utf-8"))
-        print(msg.encode("utf-8"))
 
     def _on_player_changed(self, player, data=None):
         """
