@@ -312,7 +312,20 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param args as [str]
             @param add list_OK as bool
         """
-        self._send_msg()
+        i = 0
+        msg = ""
+        for track_id in Lp.tracks.get_ids():
+            msg += self._string_for_track_id(track_id)
+            if i > 100:
+                self.request.send(msg.encode("utf-8"))
+                msg = ""
+                i = 0
+            else:
+                i += 1
+
+        if list_ok:
+            msg += "list_OK\n"
+        self._send_msg(msg)
 
     def _listplaylists(self, args_array, list_ok):
         """
