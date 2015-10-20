@@ -81,6 +81,8 @@ class MpdHandler(socketserver.BaseRequestHandler):
                                     cmd_dict[command].append(cmd[size:])
                             print(cmd_dict)
                             for key in cmd_dict.keys():
+                                if key.find("idle") == -1:
+                                    self._noidle(None, None)
                                 call = getattr(self, '_%s' % key)
                                 call(cmd_dict[key], list_ok)
                         except Exception as e:
