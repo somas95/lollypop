@@ -178,20 +178,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
             genre_id = Lp.genres.get_id(genre)
         if artist is not None:
             artist_id = Lp.artists.get_id(artist)
-        albums = []
-        if album is None and artist_id is not None:
-            albums = Lp.albums.get_ids(artist_id, genre_id)
-        else:
-            albums = self._mpddb.get_albums_ids_for(album, artist_id,
-                                                    genre_id, year)
-
-        for album_id in albums:
-            for disc in Lp.albums.get_discs(album_id, None):
-                count += Lp.albums.get_count_for_disc(album_id, None, disc)
-                playtime += Lp.albums.get_duration_for_disc(album_id,
-                                                            None,
-                                                            disc)
-        msg = "songs: %s\nplaytime: %s\n" % (count, playtime)
+        (songs, playtime) = self._mpddb.count(album, artist_id,
+                                              genre_id, year)
+        msg = "songs: %s\nplaytime: %s\n" % (songs, playtime)
         if list_ok:
             msg += "list_OK\n"
         self._send_msg(msg, list_ok)

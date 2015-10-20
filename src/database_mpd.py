@@ -20,6 +20,55 @@ class MpdDatabase:
     """
         Databse request from MPD module
     """
+
+    def count(self, album, artist_id, genre_id, year):
+        """
+            Count songs and play time
+            @param album as string
+            @param artist id as int
+            @param genre id as int
+            @param year as int
+        """
+        songs = 0
+        playtime = 0
+        from_str = "tracks "
+        where_str = ""
+        print(album, artist_id, genre_id, year)
+        if album is not None:
+            from_str += ",albums"
+            where_str += 'albums.name = "%s" AND' % album
+        if artist_id is not None:
+            from_str += ", artists"
+            if "albums" not in from_str:
+                from_str += ",albums"
+            where_str += " artists.rowid = %s\
+                          AND albums.artist_id = artists.rowid\
+                          AND tracks.album_id = albums.rowid\
+                          AND" % artist_id
+        if genre_id is not None:
+            from_str += ",track_genres"
+            where_str += " track_genres.genre_id = %s\
+                          AND track_genres.track_id = tracks.rowid\
+                          AND" % genre_id
+        if year is not None:
+            where_str += " tracks.year = %s" % year
+
+        with SqlCursor(Lp.db) as sql:
+            request = "SELECT COUNT(*), SUM(tracks.duration) FROM "\
+                       + from_str
+            if where_str != "":
+                 request += " WHERE " + where_str
+            if request.endswith("AND"):
+                request = request[:-3]
+            result = sql.execute(request)
+            v = result.fetchone()
+            if v is not None:
+                if v[0] is not None:
+                    songs = v[0]
+                if v[1] is not None:
+                    playtime = v[1]
+        return (songs, playtime)
+
     def get_artists_names(self):
         """
             Get artist names
