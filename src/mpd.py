@@ -63,7 +63,9 @@ class MpdHandler(socketserver.BaseRequestHandler):
                         data = data.replace('command_list_end\n', '')
                         list_begin = False
                 print('DATATA', data)
-                if data != '':
+                if data == '':
+                    raise IOError
+                else:
                     if data.find('command_list_ok_begin') != -1:
                         list_ok = True
                         data = data.replace('command_list_ok_begin\n', '')
@@ -86,9 +88,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
                                 call(cmd_dict[key], list_ok)
                         except Exception as e:
                             print("MpdHandler::handle(): ", command, e)
+                            self._send_msg()
                 self._idle_strings = []
-        except Exception as e:
-            print("MpdHandler::handle(): %s" % e)
+        except:
+            self._noidle(None, None)
         Lp.player.disconnect(self._signal1)
         Lp.player.disconnect(self._signal2)
         Lp.player.disconnect(self._signal3)
