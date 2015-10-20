@@ -432,7 +432,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
         for track_id in tracks_ids:
             tracks.append(Track(track_id))
         Lp.playlists.add_tracks(Type.MPD, tracks)
-        self._send_msg('', list_ok)
+        msg = ""
+        if list_ok:
+            msg += "list_OK\n"
+        self._send_msg(msg, list_ok)
 
     def _moveid(self, args_array, list_ok):
         """
@@ -454,7 +457,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
         for track_id in tracks_ids:
             tracks.append(Track(track_id))
         Lp.playlists.add_tracks(Type.MPD, tracks)
-        self._send_msg('', list_ok)
+        msg = ""
+        if list_ok:
+            msg += "list_OK\n"
+        self._send_msg(msg, list_ok)
 
     def _outputs(self, args_array, list_ok):
         """
