@@ -56,13 +56,10 @@ class MpdHandler(socketserver.BaseRequestHandler):
                 # We remove begin/end
                 data = data.replace('command_list_begin\n', '')
                 while list_begin:
-                    print('BOUCLE')
                     data += self.request.recv(1024).decode('utf-8')
-                    print('PASBOUCLE')
                     if data.endswith('command_list_end\n'):
                         data = data.replace('command_list_end\n', '')
                         list_begin = False
-                print('DATATA', data)
                 if data == '':
                     raise IOError
                 else:
@@ -428,7 +425,11 @@ class MpdHandler(socketserver.BaseRequestHandler):
             @param add list_OK as bool
         """
         msg = ""
-        for track_id in Lp.playlists.get_tracks_ids(Type.MPD):
+        tracks_ids = Lp.playlists.get_tracks_ids(Type.MPD)
+        if Lp.player.is_playing() and\
+           Lp.player.current_track.id not in tracks_ids:
+            tracks_ids.insert(0, Lp.player.current_track.id)
+        for track_id in tracks_ids:
             msg += self._string_for_track_id(track_id)
         if list_ok:
             msg += "list_OK\n"
