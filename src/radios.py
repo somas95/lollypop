@@ -75,7 +75,7 @@ class Radios(GObject.GObject):
             sql = self._sql
         if self.exists(name, sql):
             sql.execute("UPDATE radios SET"
-                        " url=?", (url,))
+                        " url=? WHERE name=?", (url, name))
         else:
             sql.execute("INSERT INTO radios (name, url, popularity)"
                         " VALUES (?, ?, ?)",
