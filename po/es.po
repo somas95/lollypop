@@ -631,7 +631,7 @@ msgstr ""
 
 #: ../data/ArtistInfos.ui.h:1
 msgid "Albums"
-msgstr "Albunes"
+msgstr "Álbumes"
 
 #: ../data/ArtistInfos.ui.h:2
 msgid "Last.fm"
@@ -795,7 +795,7 @@ msgstr "Desactivar modo aleatorio"
 
 #: ../data/ToolbarEnd.ui.h:2
 msgid "Shuffle albums"
-msgstr "Albunes aleatorios"
+msgstr "Álbumes aleatorios"
 
 #: ../data/ToolbarEnd.ui.h:3
 msgid "Shuffle tracks"
